@@ -214,6 +214,16 @@ def install_schedule(root: Path, uv: Path, hour: int, minute: int, agents_dir: P
     return plist
 
 
+def scheduled_time(agents_dir: Path) -> tuple[int, int] | None:
+    """(hour, minute) of the installed daily fetch, None if there is none."""
+    plist = agents_dir / f"{FETCH_AGENT}.plist"
+    try:
+        slot = plistlib.loads(plist.read_bytes())["StartCalendarInterval"]
+        return int(slot["Hour"]), int(slot.get("Minute", 0))
+    except (OSError, KeyError, ValueError, TypeError, plistlib.InvalidFileException):
+        return None
+
+
 def remove_schedule(agents_dir: Path) -> bool:
     plist = agents_dir / f"{FETCH_AGENT}.plist"
     if not plist.exists():

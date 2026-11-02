@@ -73,3 +73,12 @@ def test_fetch_agent_runs_fetch_in_the_project(tmp_path):
     assert agent["WorkingDirectory"] == str(tmp_path / "Job Radar")
     assert agent["StartCalendarInterval"] == {"Hour": 8, "Minute": 30}
     plistlib.dumps(agent)  # serializable as a launchd plist
+
+
+def test_the_installed_schedule_says_when_a_fetch_is_due(tmp_path):
+    from job_radar.desktop import FETCH_AGENT, fetch_agent_plist, scheduled_time
+
+    assert scheduled_time(tmp_path) is None  # nothing installed: the caller uses 08:30
+    agent = fetch_agent_plist(tmp_path, tmp_path / "uv", 7, 15)
+    (tmp_path / f"{FETCH_AGENT}.plist").write_bytes(plistlib.dumps(agent))
+    assert scheduled_time(tmp_path) == (7, 15)

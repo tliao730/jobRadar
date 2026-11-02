@@ -97,7 +97,11 @@ def ui(
     token = secrets.token_urlsafe(24)
     service = _service(cfg, extension_dir=prepare_extension(cfg.data_dir, url.rstrip("/")))
     web = create_app(
-        service, token=token, home_url=url, show_on_start=open_browser, auto_fetch=True
+        service,
+        token=token,
+        home_url=url,
+        show_on_start=open_browser,
+        fetch_due_at=daily_fetch_time(),
     )
     server = uvicorn.Server(
         uvicorn.Config(
@@ -221,19 +225,29 @@ def track(job_id: str, status: AppStatus, note: str = typer.Option("", help="備
 # --- job radar ---------------------------------------------------------------------
 
 
+def daily_fetch_time() -> tuple[int, int]:
+    """When the daily fetch is due: the installed schedule's time, else 08:30."""
+    from job_radar.desktop import scheduled_time
+    from job_radar.radar.service import DAILY_AT
+
+    return scheduled_time(Path.home() / "Library" / "LaunchAgents") or DAILY_AT
+
+
 @app.command()
 def fetch(
     if_stale: bool = typer.Option(
-        False, "--if-stale", help="上次抓取不到 20 小時就略過（開機時補抓用）"
+        False, "--if-stale", help="最近一次排程時間（例如今天 08:30）之後已經抓過就略過"
     ),
 ) -> None:
     """抓取公司清單（config/ 與 profile/ 的 companies.yaml）每家公司的職缺（ATS 公開 API）。"""
     from job_radar.radar.service import RadarService
 
     radar = RadarService(load_config())
-    if if_stale and not radar.stale():
-        console.print("上次抓取還不到 20 小時，略過")
-        return
+    if if_stale:
+        hour, minute = daily_fetch_time()
+        if not radar.stale((hour, minute)):
+            logging.getLogger(__name__).info("%02d:%02d 之後已經抓過，略過", hour, minute)
+            return
     stats = radar.fetch()
     console.print(
         f"成功 {stats.ok} 個職缺板：新增 {stats.new}、更新 {stats.updated}、下架 {stats.closed}"
@@ -294,7 +308,7 @@ def install_schedule(
     time_of_day: str = typer.Option("08:30", "--at", help="每天幾點抓取（HH:MM，本地時間）"),
     remove: bool = typer.Option(False, "--remove", help="取消每日抓取"),
 ) -> None:
-    """每天自動執行 `job-radar fetch`（macOS launchd；睡眠中錯過的會在醒來時補跑）。"""
+    """每天自動執行 `job-radar fetch`（macOS launchd；錯過的在醒來、登入或打開助手時補抓）。"""
     from job_radar.desktop import install_schedule as install
     from job_radar.desktop import remove_schedule
 

@@ -1,6 +1,6 @@
 import json
 import threading
-from datetime import datetime
+from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -351,3 +351,21 @@ def test_threads_of_one_process_take_turns_with_the_database(tmp_path):
         order.append("first")
     thread.join()
     assert order == ["first", "other"]
+
+
+def test_the_daily_fetch_is_due_once_its_time_has_passed(tmp_path, monkeypatch):
+    service = RadarService(AppConfig(root=tmp_path, paths=PathsConfig(data_dir=str(tmp_path))))
+
+    def fetched_at(local: datetime) -> None:
+        finished = local.astimezone(UTC).replace(tzinfo=None)  # runs are stored in UTC
+        monkeypatch.setattr(service.store, "last_run", lambda: {"finished_at": finished})
+
+    morning, early = datetime(2026, 11, 2, 9, 0), datetime(2026, 11, 2, 7, 0)
+    # 11/02: a manual fetch the afternoon before used to make 08:30 skip ("not 20 hours yet").
+    fetched_at(datetime(2026, 11, 1, 13, 57))
+    assert service.stale((8, 30), morning)
+    assert not service.stale((8, 30), early)  # before 08:30, yesterday's slot is the latest
+    fetched_at(datetime(2026, 11, 2, 8, 31))
+    assert not service.stale((8, 30), morning)
+    fetched_at(datetime(2026, 11, 1, 8, 0))
+    assert service.stale((8, 30), early)  # yesterday's 08:30 was missed too

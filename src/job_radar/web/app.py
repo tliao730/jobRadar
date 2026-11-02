@@ -68,10 +68,11 @@ def create_app(
     home_url: str | None = None,
     show_on_start: bool = False,
     radar: RadarService | None = None,
-    auto_fetch: bool = False,
+    fetch_due_at: tuple[int, int] | None = None,
 ) -> FastAPI:
     """`home_url` is where this server is reachable; with `show_on_start` the main page opens
-    in the controlled Chrome as soon as the server accepts connections."""
+    in the controlled Chrome as soon as the server accepts connections. With `fetch_due_at`
+    (the daily fetch time), starting up makes up a daily fetch the Mac missed."""
     token = token or secrets.token_urlsafe(24)
     web_root = resources.files("job_radar.web")
     radar = radar or RadarService(service.cfg)
@@ -116,7 +117,7 @@ def create_app(
     async def lifespan(_: FastAPI):
         task = asyncio.create_task(show_when_ready()) if show_on_start and home_url else None
         # Opening the assistant makes up a missed daily fetch (the Mac was off at 08:30).
-        stale = auto_fetch and await run_in_threadpool(radar.stale)
+        stale = fetch_due_at is not None and await run_in_threadpool(radar.stale, fetch_due_at)
         warming = in_background(fetch_jobs() if stale else warm_radar())
         yield
         # Let a warm-up still running in its thread finish before the process exits.

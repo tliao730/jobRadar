@@ -8,7 +8,7 @@ import threading
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from importlib import resources
 from itertools import repeat
 
@@ -27,7 +27,7 @@ from job_radar.radar.store import BoardResult, RadarStore, RunStats, utcnow
 log = logging.getLogger(__name__)
 
 REQUEST_GAP_S = 1.0  # between requests to the same platform
-STALE_HOURS = 20  # a daily fetch is due again
+DAILY_AT = (8, 30)  # local time of the daily fetch unless install-schedule --at says otherwise
 ATS_VALUES = {p.value for p in ATS_PLATFORMS}
 
 
@@ -46,10 +46,19 @@ class RadarService:
     def fetching(self) -> bool:
         return self._fetching.locked()
 
-    def stale(self, hours: float = STALE_HOURS) -> bool:
-        """No fetch in the last `hours` (the Mac was off at 08:30, which launchd never makes up)."""
+    def stale(self, at: tuple[int, int] = DAILY_AT, now: datetime | None = None) -> bool:
+        """No fetch since the latest daily slot (`at`, local time: today's once it has passed,
+        else yesterday's). launchd never makes up a slot missed while the Mac was off, so
+        logging in and opening the assistant check this. (A "20 hours since the last fetch"
+        rule skipped 08:30 on 11/02 because of a manual fetch the afternoon before.)"""
         run = self.store.last_run()
-        return run is None or utcnow() - run["finished_at"] > timedelta(hours=hours)
+        if run is None:
+            return True
+        now = now or datetime.now()  # local, naive: astimezone() below applies local DST rules
+        slot = now.replace(hour=at[0], minute=at[1], second=0, microsecond=0)
+        if slot > now:
+            slot -= timedelta(days=1)
+        return run["finished_at"] < slot.astimezone(UTC).replace(tzinfo=None)
 
     def fetch(
         self, client: httpx.Client | None = None, command: str = "fetch", sites: bool = True

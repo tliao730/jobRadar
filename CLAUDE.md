@@ -158,7 +158,7 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 - `store.py`：`data/jobs.duckdb` 的 `jobs`、`fetch_results`、`runs`、`dismissed`（「不感興趣」）。每次操作開短連線、被鎖住時重試，讓排程抓取和開著的助手可以共用；同一個程式裡的執行緒輪流開（DuckDB 在一個連線關閉的同時又開新連線會報 "already attached"，2026-10-25 在介面觸發的抓取中發生過）。下架、suspect、baseline 規則同第 4 節。
 - `match.py`：不用 LLM 的規則評分。先用職稱與地點篩（便宜），通過的才讀 JD：排除 sponsorship 寫明不提供、發布超過 60 天。分數 = 加權（技能重疊（平滑過的比例）、職務偏好、層級（想找 intern / new grad，沒寫層級的分數低））。規則都在 `config/filters.yaml`（加上 `profile/filters.yaml` 的個人設定）、`config/skills.yaml`；我的技能 = highlights + 履歷 + `profile/skills.yaml` 對到的詞彙。
 - `service.py`：結果依抓取批次與設定、`highlights.yaml`、`profile/skills.yaml`、履歷 PDF 的修改時間快取（重算一次約 4 秒；只看技能來源的檔案，記住答案、改 `applicant.yaml` 不會讓快取失效）。助手啟動時和每次抓取完就在背景先算好，打開推薦頁不用等；同時間只算一次。同公司同職稱只留分數最高的地點。
-- 排程：`install-schedule` 寫 `~/Library/LaunchAgents/local.job-radar.fetch.plist`，紀錄在 `data/logs/fetch.log`。launchd 不會補跑 Mac 關機時錯過的 08:30（10/29、10/30 就這樣漏掉），所以排程跑 `fetch --if-stale` 並加 `RunAtLoad`：登入時、打開助手時，上次抓取超過 20 小時就補抓一次。
+- 排程：`install-schedule` 寫 `~/Library/LaunchAgents/local.job-radar.fetch.plist`，紀錄在 `data/logs/fetch.log`。launchd 不會補跑 Mac 關機時錯過的 08:30（10/29、10/30 就這樣漏掉），所以排程跑 `fetch --if-stale` 並加 `RunAtLoad`：08:30、登入時、打開助手時，只要「最近一個排程時間點（今天 08:30，還沒到就算昨天的）之後還沒抓過」就抓（`RadarService.stale`；時間從已安裝的 plist 讀，`--at` 改過也照著走）。原本用「上次抓取超過 20 小時」，11/02 因為前一天下午手動抓過，08:30 被判成不用抓。
 - 「新職缺」＝最近 3 天第一次出現（`match.NEW_DAYS`；職缺板第一次被抓到的不算）。推薦頁顯示近 3 天新出現的推薦數，抓完跳出這次新增幾個、哪些來源失敗；以前只顯示「最後一次抓取」的新增數，連按兩次就變 0，看起來像壞掉。
 - `sites/`：LinkedIn（訪客職缺搜尋，只抓搜尋卡片；詳細頁兩三個請求就 429，而且不登入看不到申請連結）與 Jobright（不登入的搜尋頁，每個關鍵字前 20 筆，`__NEXT_DATA__`；2026-11 起第一個請求就導到 `/_jr/security/challenge` 真人驗證頁，依規則停下、10/24 之後沒抓到任何 Jobright 職缺）。關鍵字、間隔在 `config/sources.yaml`；遇到 429、登入頁、非結果頁就停止該網站，已抓到的保留。網站職缺不會因為這次沒出現就下架，14 天沒再看到才算下架。
 - `resolve.py`：網站職缺用（正規化公司名、職稱相似度 ≥ 0.6）對到 ATS 職缺，`jobs.ats_id` 記下對應；推薦頁只顯示 ATS 那筆並標「也在 LinkedIn / Jobright」。公司不在清單裡時，用完整公司名猜 Greenhouse / Lever / Ashby 代號（不用第一個字，否則 "applied"、"new" 會猜到別家），職缺板上要有職稱對得上的職缺、Greenhouse 的公司名也要對得上才算找到；結果快取在 `company_boards` 30 天。找到的公司列在推薦頁上方，按「加入」寫進自己的 `profile/companies.yaml`（共用清單 `config/companies.yaml` 不動）。對不到的網站職缺列在「需要自己開啟」，加入後只開原網頁、不自動按 ②。
@@ -331,6 +331,7 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 - [x] 職務類別 prefilter；`fetch`、`check-companies`
 - [x] 每天 08:30 在 Mac 用 launchd 抓取
 - [x] 個人設定放 `profile/` 同名檔、蓋過共用的 `config/`，朋友 clone 後 `git pull` 不衝突；178 個自動測試
+- [x] 每日抓取改成「最近一個排程時間點之後沒抓過就抓」（修 11/02 早上被略過）
 - [ ] R2 pull / push / 備份
 - [x] 提前做的 Phase 5 部分：規則評分、`radar` 指令、主頁「推薦職缺」與「加入並開啟」
 
