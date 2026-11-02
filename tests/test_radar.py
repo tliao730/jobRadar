@@ -123,6 +123,62 @@ def test_store_tracks_new_changed_closed_and_suspect_boards(tmp_path):
     assert store.dismissed() == {"greenhouse:0"}
 
 
+def test_personal_settings_change_only_what_they_name(tmp_path):
+    # A friend's profile/ holds their own level, sponsorship, roles and queries; the shared
+    # config/ in git stays untouched, so `git pull` never conflicts.
+    config, mine = tmp_path / "config", tmp_path / "profile"
+    config.mkdir()
+    mine.mkdir()
+    for name in ("filters.yaml", "skills.yaml", "sources.yaml"):
+        (config / name).write_text((ROOT_CONFIG / name).read_text())
+    (config / "companies.yaml").write_text(
+        "companies:\n  - {name: A, platform: lever, token: a}\n"
+        "  - {name: B, platform: ashby, token: b}\n"
+    )
+    (mine / "companies.yaml").write_text(
+        "companies:\n  - {platform: ashby, token: b, enabled: false}\n"
+        "  - {name: C, platform: greenhouse, token: c}\n"
+    )
+    (mine / "filters.yaml").write_text(
+        "sponsorship: {exclude_no_sponsorship: false}\n"
+        "levels: {want: [intern, new_grad]}\n"
+        "roles:\n  - {id: da, enabled: false}\n  - {id: quant, titles: ['\\bquant\\b']}\n"
+    )
+    (mine / "sources.yaml").write_text("queries: [software engineer]\n")
+
+    shared = load_radar_config(config)
+    radar = load_radar_config(config, mine)
+    assert [(c.token, c.enabled) for c in radar.companies] == [
+        ("a", True),
+        ("b", False),
+        ("c", True),
+    ]
+    assert not radar.filters.sponsorship.exclude_no_sponsorship
+    assert radar.filters.sponsorship.no_sponsorship == shared.filters.sponsorship.no_sponsorship
+    assert radar.filters.levels.want == ["intern", "new_grad"]
+    assert radar.filters.levels.max_years == shared.filters.levels.max_years
+    roles = {r.id: r for r in radar.filters.roles}
+    assert not roles["da"].enabled
+    assert roles["da"].titles == next(r for r in shared.filters.roles if r.id == "da").titles
+    assert list(roles) == [r.id for r in shared.filters.roles] + ["quant"]
+    assert radar.sources.queries == ["software engineer"]
+    assert radar.sources.linkedin == shared.sources.linkedin
+    assert radar.skills == shared.skills
+
+
+def test_init_profile_templates_change_nothing_until_edited(tmp_path, monkeypatch):
+    from typer.testing import CliRunner
+
+    from job_radar.cli import app
+
+    monkeypatch.setenv("JOB_RADAR_ROOT", str(tmp_path))
+    result = CliRunner().invoke(app, ["init-profile"])
+    assert result.exit_code == 0, result.output
+    profile = tmp_path / "profile"
+    assert {"filters.yaml", "sources.yaml", "companies.yaml"} <= {p.name for p in profile.iterdir()}
+    assert load_radar_config(ROOT_CONFIG, profile) == load_radar_config(ROOT_CONFIG)
+
+
 @pytest.fixture
 def matcher():
     radar = load_radar_config(ROOT_CONFIG)
@@ -271,6 +327,10 @@ def test_service_fetches_ranks_and_merges_locations(tmp_path, profile_dir, monke
     highlights.write_text(highlights.read_text() + "\n")
     service.matches()
     assert evaluated  # what my skills come from did change
+    evaluated.clear()
+    (profile_dir / "filters.yaml").write_text("levels: {want: [intern]}\n")
+    service.matches()
+    assert evaluated  # so did my own filters
 
 
 def test_threads_of_one_process_take_turns_with_the_database(tmp_path):

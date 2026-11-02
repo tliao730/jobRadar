@@ -1,5 +1,6 @@
 # 職缺網站搜尋（不登入）。結果會和 ATS 職缺比對：對得到就用 ATS 申請頁（能自動填），
 # 對不到的列成「需要自己開啟」。遇到 429、登入頁或驗證頁就停止該網站，記在抓取結果裡。
+# 這是共用設定；個人的搜尋關鍵字寫在 profile/sources.yaml。
 queries:
   - AI engineer new grad
   - data scientist new grad

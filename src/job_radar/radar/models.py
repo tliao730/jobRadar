@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable, Hashable
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
@@ -119,16 +120,65 @@ class RadarConfig(BaseModel):
     sources: Sources = Field(default_factory=Sources)
 
 
-def load_radar_config(config_dir: Path) -> RadarConfig:
-    def read(name: str) -> dict:
-        path = config_dir / name
+def load_radar_config(config_dir: Path, personal_dir: Path | None = None) -> RadarConfig:
+    """Shared settings from `config_dir` (in git). A companies / filters / sources file of the
+    same name in `personal_dir` (profile/, not in git) holds only what one person changes, so
+    `git pull` never conflicts with it."""
+
+    def read(path: Path) -> dict:
         if not path.exists():
             return {}
         return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
+    def load(name: str) -> dict:
+        shared = read(config_dir / name)
+        return merge_settings(shared, read(personal_dir / name)) if personal_dir else shared
+
+    companies = read(config_dir / "companies.yaml").get("companies") or []
+    if personal_dir:
+        mine = read(personal_dir / "companies.yaml").get("companies") or []
+        companies = merge_entries(companies, mine, _company_key)
     return RadarConfig(
-        companies=read("companies.yaml").get("companies", []),
-        filters=read("filters.yaml"),
-        skills=read("skills.yaml").get("skills", []),
-        sources=read("sources.yaml"),
+        companies=companies,
+        filters=load("filters.yaml"),
+        skills=read(config_dir / "skills.yaml").get("skills", []),
+        sources=load("sources.yaml"),
     )
+
+
+def merge_settings(base: dict, override: dict) -> dict:
+    """`override` wins: mappings merge key by key, lists of entries with an `id` (role
+    families) merge by id, other lists are replaced."""
+    out = dict(base)
+    for key, value in override.items():
+        old = out.get(key)
+        if isinstance(old, dict) and isinstance(value, dict):
+            out[key] = merge_settings(old, value)
+        elif _has_ids(old) and _has_ids(value):
+            out[key] = merge_entries(old, value, lambda entry: entry["id"])
+        else:
+            out[key] = value
+    return out
+
+
+def merge_entries(
+    base: list[dict], override: list[dict], key: Callable[[dict], Hashable]
+) -> list[dict]:
+    """Entries of `override` update the base entry with the same key; new ones are appended."""
+    merged = {key(entry): entry for entry in base}
+    for entry in override:
+        k = key(entry)
+        merged[k] = merge_settings(merged[k], entry) if k in merged else entry
+    return list(merged.values())
+
+
+def _has_ids(value: object) -> bool:
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(isinstance(e, dict) and "id" in e for e in value)
+    )
+
+
+def _company_key(entry: dict) -> Hashable:
+    return (entry.get("platform"), entry.get("token"))

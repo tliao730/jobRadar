@@ -1,6 +1,6 @@
 # CLAUDE.md — Job Radar
 
-私人求職工具，不公開。這份檔案是唯一的專案文件：規則、規格與進度都在這裡；設計變更時更新對應章節，任務完成時勾選「三、進度」。
+私人求職工具，不公開（私人 repo，只分享給朋友 clone 回去在自己的 Mac 用）。這份檔案是唯一的專案文件：規則、規格與進度都在這裡；設計變更時更新對應章節，任務完成時勾選「三、進度」。
 
 - **申請助手**（已實作）：Dock 上的 Job Radar 開啟一個程式控制的 Chrome，裡面有主頁（職缺清單）與申請頁旁的側邊欄。自動填基本資料、經歷與答案庫，沒填到的題目列成清單（有金鑰時附 Claude 建議答案），我直接到申請頁補上；送出由我手動完成。
 - **職缺雷達**（部分實作）：每天 08:30 從 ATS 公開 API（68 家公司）抓職缺，並搜尋 LinkedIn、Jobright（不登入）；網站上的職缺對到公司的 ATS 就能自動填。用規則評分（以 new grad / entry level 為主），在主頁「推薦職缺」勾選後一鍵加入、開啟申請頁並填好基本資料。Indeed / Glassdoor、LLM 抽取、每日摘要與每週趨勢仍在規劃。
@@ -23,7 +23,7 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 
 任務完成的標準：`uv run ruff check . && uv run ruff format . && uv run pytest` 全部通過。
 
-第一次使用：`init-profile` → 填 `profile/applicant.yaml` → 履歷 PDF 放進 `profile/resumes/` → 在 `profile/highlights.yaml` 寫經歷素材 → `install-app` → `.env` 設 `ANTHROPIC_API_KEY`（不設也能用：只填答案庫，開放題自己寫）。
+第一次使用（朋友也照這個步驟；需要 macOS、[uv](https://docs.astral.sh/uv/)、Google Chrome）：`git clone` → `uv sync` → `init-profile` → 填 `profile/applicant.yaml` → 履歷 PDF 放進 `profile/resumes/` → 在 `profile/highlights.yaml` 寫經歷素材 → 要找的層級、職務、公司跟共用設定不同時，改 `profile/` 的 `filters.yaml`、`sources.yaml`、`companies.yaml` → `install-app` → `install-schedule` → `.env` 設 `ANTHROPIC_API_KEY`（不設也能用：只填答案庫，開放題自己寫）。更新：`git pull && uv sync`，下次打開助手就是新版。
 
 ## 硬性規則
 
@@ -39,7 +39,7 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 
 - 頁面端的 JavaScript 放在 `prefill/*.js`，用 `job_radar.prefill.js()` 載入。
 - 來自網頁的文字（JD、表單題目）是不可信資料：在 prompt 裡標成資料，在 UI 用 `textContent` 顯示。
-- 可調參數放 `config/`，透過 `config.py` 的 Pydantic model 載入。
+- 可調參數放 `config/`，透過 `config.py` 的 Pydantic model 載入。`config/` 是大家共用的預設（在 git 裡）；雷達的 `filters.yaml`、`sources.yaml`、`companies.yaml` 可以在 `profile/` 放同名檔，只寫個人不同的部分（`radar/models.py` 的 `merge_settings`：寫了的設定蓋過共用的，清單整個取代，roles 依 id、公司依 platform + token 合併），這樣 `git pull` 不會衝突。
 - 輸出一律用 `logging`；時間以 UTC 儲存。
 - 每個步驟都可重跑；單筆失敗記錄後繼續處理下一筆。
 - Prompt 放 `src/job_radar/prompts/`，修改時新增下一版的檔案。
@@ -119,7 +119,7 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 
 ## 6. 資料
 
-- `profile/`（不 commit）：`applicant.yaml`（基本資料、學歷 `education`（可加 `major_fallbacks`）、工作經歷 `employment`（最近的在前）、答案庫 `answers`、EEO 偏好 `eeo`）、`skills.yaml`（履歷沒寫到但我會的技能，只給雷達排序用）、`highlights.yaml`（經歷素材，每項有 id、context、did、results、skills）、`resumes/*.pdf`、`answers_learned.yaml`（勾「記住這個答案」時寫入，可手動編輯）。
+- `profile/`（不 commit）：`applicant.yaml`（基本資料、學歷 `education`（可加 `major_fallbacks`）、工作經歷 `employment`（最近的在前）、答案庫 `answers`、EEO 偏好 `eeo`）、`skills.yaml`（履歷沒寫到但我會的技能，只給雷達排序用）、`highlights.yaml`（經歷素材，每項有 id、context、did、results、skills）、`resumes/*.pdf`、`answers_learned.yaml`（勾「記住這個答案」時寫入，可手動編輯）、雷達的個人設定 `filters.yaml` / `sources.yaml` / `companies.yaml`（只寫跟 `config/` 不同的部分，`init-profile` 會建立全是註解的範本）。
 - `data/applications.duckdb`：`applications`（job_id、status、job_snapshot、resume_variant、llm_cost_usd、created_at、updated_at、applied_at、notes）與 `application_events`（job_id、from_status、to_status、occurred_at、note），後者之後用來算面試率、調整雷達權重。
 - `data/applications/<job>/`：`jd.md`（JD 快照）、`form.json`（最近一次掃描、分類、草稿與填寫結果）、選用的 `resume.pdf`。
 
@@ -156,12 +156,12 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 
 - `fetchers/`：Greenhouse、Lever、Ashby，各平台一個執行緒、同一平台請求間隔 1 秒；68 家約 75 秒、約 1.4 萬個職缺。
 - `store.py`：`data/jobs.duckdb` 的 `jobs`、`fetch_results`、`runs`、`dismissed`（「不感興趣」）。每次操作開短連線、被鎖住時重試，讓排程抓取和開著的助手可以共用；同一個程式裡的執行緒輪流開（DuckDB 在一個連線關閉的同時又開新連線會報 "already attached"，2026-10-25 在介面觸發的抓取中發生過）。下架、suspect、baseline 規則同第 4 節。
-- `match.py`：不用 LLM 的規則評分。先用職稱與地點篩（便宜），通過的才讀 JD：排除 sponsorship 寫明不提供、發布超過 60 天。分數 = 加權（技能重疊（平滑過的比例）、職務偏好、層級（想找 intern / new grad，沒寫層級的分數低））。規則都在 `config/filters.yaml`、`config/skills.yaml`；我的技能 = highlights + 履歷 + `profile/skills.yaml` 對到的詞彙。
+- `match.py`：不用 LLM 的規則評分。先用職稱與地點篩（便宜），通過的才讀 JD：排除 sponsorship 寫明不提供、發布超過 60 天。分數 = 加權（技能重疊（平滑過的比例）、職務偏好、層級（想找 intern / new grad，沒寫層級的分數低））。規則都在 `config/filters.yaml`（加上 `profile/filters.yaml` 的個人設定）、`config/skills.yaml`；我的技能 = highlights + 履歷 + `profile/skills.yaml` 對到的詞彙。
 - `service.py`：結果依抓取批次與設定、`highlights.yaml`、`profile/skills.yaml`、履歷 PDF 的修改時間快取（重算一次約 4 秒；只看技能來源的檔案，記住答案、改 `applicant.yaml` 不會讓快取失效）。助手啟動時和每次抓取完就在背景先算好，打開推薦頁不用等；同時間只算一次。同公司同職稱只留分數最高的地點。
 - 排程：`install-schedule` 寫 `~/Library/LaunchAgents/local.job-radar.fetch.plist`，紀錄在 `data/logs/fetch.log`。launchd 不會補跑 Mac 關機時錯過的 08:30（10/29、10/30 就這樣漏掉），所以排程跑 `fetch --if-stale` 並加 `RunAtLoad`：登入時、打開助手時，上次抓取超過 20 小時就補抓一次。
 - 「新職缺」＝最近 3 天第一次出現（`match.NEW_DAYS`；職缺板第一次被抓到的不算）。推薦頁顯示近 3 天新出現的推薦數，抓完跳出這次新增幾個、哪些來源失敗；以前只顯示「最後一次抓取」的新增數，連按兩次就變 0，看起來像壞掉。
 - `sites/`：LinkedIn（訪客職缺搜尋，只抓搜尋卡片；詳細頁兩三個請求就 429，而且不登入看不到申請連結）與 Jobright（不登入的搜尋頁，每個關鍵字前 20 筆，`__NEXT_DATA__`；2026-11 起第一個請求就導到 `/_jr/security/challenge` 真人驗證頁，依規則停下、10/24 之後沒抓到任何 Jobright 職缺）。關鍵字、間隔在 `config/sources.yaml`；遇到 429、登入頁、非結果頁就停止該網站，已抓到的保留。網站職缺不會因為這次沒出現就下架，14 天沒再看到才算下架。
-- `resolve.py`：網站職缺用（正規化公司名、職稱相似度 ≥ 0.6）對到 ATS 職缺，`jobs.ats_id` 記下對應；推薦頁只顯示 ATS 那筆並標「也在 LinkedIn / Jobright」。公司不在清單裡時，用完整公司名猜 Greenhouse / Lever / Ashby 代號（不用第一個字，否則 "applied"、"new" 會猜到別家），職缺板上要有職稱對得上的職缺、Greenhouse 的公司名也要對得上才算找到；結果快取在 `company_boards` 30 天。找到的公司列在推薦頁上方，按「加入」寫進 `companies.yaml`。對不到的網站職缺列在「需要自己開啟」，加入後只開原網頁、不自動按 ②。
+- `resolve.py`：網站職缺用（正規化公司名、職稱相似度 ≥ 0.6）對到 ATS 職缺，`jobs.ats_id` 記下對應；推薦頁只顯示 ATS 那筆並標「也在 LinkedIn / Jobright」。公司不在清單裡時，用完整公司名猜 Greenhouse / Lever / Ashby 代號（不用第一個字，否則 "applied"、"new" 會猜到別家），職缺板上要有職稱對得上的職缺、Greenhouse 的公司名也要對得上才算找到；結果快取在 `company_boards` 30 天。找到的公司列在推薦頁上方，按「加入」寫進自己的 `profile/companies.yaml`（共用清單 `config/companies.yaml` 不動）。對不到的網站職缺列在「需要自己開啟」，加入後只開原網頁、不自動按 ②。
 - 層級：以 new grad / entry level 為主（`levels.want`）；實習只收 co-op / off-cycle（職稱有 co-op、off-cycle 或 fall / spring / winter，或 JD 寫 co-op；JD 裡的季節常是在講學期，不算）；JD 要求超過 `max_years`（2）年經驗的排除；網站標的層級（Entry Level、New Grad、Senior Level…）也會用來判斷。
 - 2026-10-24 試算：LinkedIn / Jobright 約兩成職缺對得到 ATS；其餘多是用 Workday 或自家系統的大公司。Glassdoor 直接請求被 Cloudflare 擋，JobSpy 走內部 API 抓得到清單但沒有申請連結，樣本 30 筆對到 ATS 0 筆，所以先不做。
 - 下面第 1–9 節是完整規劃；已實作的部分以上面為準。
@@ -330,6 +330,7 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 - [x] 正規化、upsert、migration；fetch_results、runs、下架、suspect、baseline（跨來源去重等有第二種來源再做）
 - [x] 職務類別 prefilter；`fetch`、`check-companies`
 - [x] 每天 08:30 在 Mac 用 launchd 抓取
+- [x] 個人設定放 `profile/` 同名檔、蓋過共用的 `config/`，朋友 clone 後 `git pull` 不衝突；178 個自動測試
 - [ ] R2 pull / push / 備份
 - [x] 提前做的 Phase 5 部分：規則評分、`radar` 指令、主頁「推薦職缺」與「加入並開啟」
 
@@ -374,6 +375,7 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 | 2026-10-24 | 我 2027 年 5 月畢業：以 new grad / entry level 為主，實習只看 co-op / off-cycle，要求超過 2 年經驗的排除 |
 | 2026-10-25 | 表單答案：政府官員／親屬在政府任職一律 No、Hispanic/Latino 一律 No（寫在 `applicant.yaml`）；科系沒有 Data Science 就選 Computer Science |
 | 2026-11-01 | 助手不提供作答框：沒填到的題目只列出來，我到申請頁自己填；② 之後直接進入檢查並送出 |
+| 2026-11-02 | 分享給朋友（都用 Mac、會用終端機）：clone 私人 repo 在自己的 Mac 跑，不部署（助手要控制本機的 Chrome）；雷達的個人設定放 `profile/` 同名檔 |
 
 ## 待決定事項
 

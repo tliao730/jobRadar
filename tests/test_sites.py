@@ -266,8 +266,8 @@ def test_found_companies_can_be_added_to_the_list(tmp_path, profile_dir):
     from job_radar.radar.service import RadarService
 
     (tmp_path / "config").mkdir()
-    companies = tmp_path / "config" / "companies.yaml"
-    companies.write_text("# 我的公司清單\ncompanies:\n  - {name: A, platform: lever, token: a}\n")
+    shared = "companies:\n  - {name: A, platform: lever, token: a}\n"
+    (tmp_path / "config" / "companies.yaml").write_text(shared)
     cfg = AppConfig(
         root=tmp_path, paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d"))
     )
@@ -278,9 +278,12 @@ def test_found_companies_can_be_added_to_the_list(tmp_path, profile_dir):
 
     service.add_company("Red Ventures", "greenhouse", "redventures")
     service.add_company("Red Ventures", "greenhouse", "redventures")  # once only
-    assert companies.read_text().startswith("# 我的公司清單")
-    tokens = [c.token for c in load_radar_config(tmp_path / "config").companies]
-    assert tokens == ["a", "redventures"]
+    service.add_company("B", "ashby", "b")
+    # Added to my own list in profile/; the shared list in git stays as it was.
+    assert (tmp_path / "config" / "companies.yaml").read_text() == shared
+    assert (profile_dir / "companies.yaml").read_text().startswith("# 我自己要多抓的公司")
+    tokens = [c.token for c in load_radar_config(tmp_path / "config", profile_dir).companies]
+    assert tokens == ["a", "redventures", "b"]
     assert service.found_companies() == []
     with pytest.raises(ValueError):
         service.add_company("X", "workday", "x")

@@ -1,0 +1,6 @@
+# LinkedIn / Jobright 搜尋的個人設定：只寫跟 config/sources.yaml（共用設定）不一樣的部分。
+# queries 會整個取代共用的關鍵字，例如（把 # 拿掉再改）：
+#
+# queries:
+#   - software engineer new grad
+#   - software engineer

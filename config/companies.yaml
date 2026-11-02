@@ -1,7 +1,7 @@
 # 職缺雷達抓取的公司：platform 是 greenhouse / lever / ashby，token 是職缺板網址裡的代號
 # （job-boards.greenhouse.io/{token}、jobs.lever.co/{token}、jobs.ashbyhq.com/{token}）。
 # 加公司後執行 `uv run job-radar check-companies` 驗證；不想抓的設 enabled: false。
-# 2026-10-23 驗證過的初始清單，想去的公司請自己增減。
+# 2026-10-23 驗證過的共用清單（在 git 裡）；自己要多抓或不抓的公司寫在 profile/companies.yaml。
 companies:
   - {name: "Cohere", platform: ashby, token: cohere}
   - {name: "Decagon", platform: ashby, token: decagon}

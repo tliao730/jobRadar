@@ -9,6 +9,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from importlib import resources
 from itertools import repeat
 
 import httpx
@@ -39,7 +40,7 @@ class RadarService:
         self._cache: tuple[tuple, list[Match]] | None = None
 
     def radar_config(self) -> RadarConfig:
-        return load_radar_config(self.cfg.root / "config")
+        return load_radar_config(self.cfg.root / "config", self.cfg.profile_dir)
 
     @property
     def fetching(self) -> bool:
@@ -111,15 +112,20 @@ class RadarService:
         return [b for b in self.store.found_boards() if (b["platform"], b["token"]) not in tracked]
 
     def add_company(self, name: str, platform: str, token: str) -> None:
-        """Append a company to config/companies.yaml (comments and order are kept)."""
-        path = self.cfg.root / "config" / "companies.yaml"
+        """Append a company to my own list, profile/companies.yaml (comments and order are
+        kept); config/companies.yaml is the shared list in git."""
+        path = self.cfg.profile_dir / "companies.yaml"
         Company(name=name, platform=platform, token=token)  # validate
         if (platform, token) in {
             (c.platform.value, c.token) for c in self.radar_config().companies
         }:
             return
         line = f"  - {{name: {json.dumps(name)}, platform: {platform}, token: {token}}}\n"
-        text = path.read_text("utf-8") if path.exists() else "companies:\n"
+        if path.exists():
+            text = path.read_text("utf-8")
+        else:
+            text = resources.files("job_radar.profile_templates").joinpath(path.name).read_text()
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text + ("" if text.endswith("\n") else "\n") + line, encoding="utf-8")
 
     def _fetch_boards(self, companies: list[Company], client: httpx.Client) -> list[BoardResult]:
@@ -162,7 +168,7 @@ class RadarService:
         # applicant.yaml must not cost a ~4 s re-evaluation of every job.
         profile = self.cfg.profile_dir
         watched = [self.cfg.root / "config" / n for n in ("filters.yaml", "skills.yaml")]
-        watched += [profile / "highlights.yaml", profile / "skills.yaml"]
+        watched += [profile / n for n in ("filters.yaml", "highlights.yaml", "skills.yaml")]
         if (profile / "resumes").is_dir():
             watched += sorted((profile / "resumes").glob("*.pdf"))
         return (

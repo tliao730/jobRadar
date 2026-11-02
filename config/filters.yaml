@@ -1,4 +1,5 @@
 # 職缺雷達的篩選與評分規則。比對不分大小寫，都是 regex（\b 是字邊界）。
+# 這是大家共用的預設（在 git 裡）；個人不同的部分寫在 profile/filters.yaml，只寫要改的設定。
 
 # 職務類別：職稱符合 titles 任一條就屬於該類別（由上而下第一個符合的為準）。
 # weight 是偏好（0–1），enabled: false 整類不看。
@@ -37,7 +38,8 @@ locations:
   include: ['united states', '\busa?\b', '\bremote\b', 'new york', '\bny\b', 'san francisco', 'bay area', 'seattle', 'los angeles', 'boston', 'austin', 'chicago', 'mountain view', 'palo alto', 'menlo park', 'sunnyvale', 'san jose', 'san mateo', 'redwood city', 'oakland', 'denver', 'atlanta', 'washington', ', (ca|ny|wa|ma|tx|il|co|ga|nj|pa|or|nc|va|ut|az|fl|mn|mi|oh|md|dc)\b']
   exclude: ['canada', 'united kingdom', '\buk\b', 'london', 'india', 'singapore', 'germany', 'ireland', 'dublin', 'japan', 'brazil', 'mexico', 'poland', 'netherlands', 'australia', 'toronto', 'remote.{0,10}(canada|uk|emea|europe|apac|latam)']
 
-# 我需要 sponsorship：JD 寫明不提供的直接排除（不需要的話把 exclude_no_sponsorship 改成 false）。
+# JD 寫明不提供 sponsorship 的直接排除（不需要 sponsorship 的人在 profile/filters.yaml 把
+# exclude_no_sponsorship 設成 false）。
 sponsorship:
   exclude_no_sponsorship: true
   no_sponsorship: ['(not|unable to|cannot|can.t|will not|won.t|do not|does not) (be able to )?(offer|provide|support|sponsor)[^.]{0,40}(sponsorship|visa)', 'without (the )?(need for )?(current or future )?(visa )?sponsorship', 'no (visa )?sponsorship', 'must be (a )?u\.?s\.? citizen', 'security clearance', 'citizenship is required']

@@ -1,0 +1,12 @@
+# 雷達篩選與評分的個人設定：只寫跟 config/filters.yaml（共用設定）不一樣的部分，其他照共用的。
+# 寫了的設定蓋過共用的；清單整個取代，只有 roles 依 id 合併（只寫要改的欄位）。
+# 例如（把 # 拿掉再改）：
+#
+# levels:
+#   want: [intern, new_grad]          # 也想看實習
+#   max_years: 3
+# sponsorship:
+#   exclude_no_sponsorship: false     # 不需要 sponsorship
+# roles:
+#   - {id: swe, weight: 1.0}          # 主要找 SWE
+#   - {id: da, enabled: false}        # 不看 data analyst

@@ -141,7 +141,8 @@ def init_profile() -> None:
     target = cfg.profile_dir
     (target / "resumes").mkdir(parents=True, exist_ok=True)
     templates = resources.files("job_radar.profile_templates")
-    for name in ("applicant.yaml", "highlights.yaml"):
+    personal_radar = ("filters.yaml", "sources.yaml", "companies.yaml")  # over config/
+    for name in ("applicant.yaml", "highlights.yaml", *personal_radar):
         dest = target / name
         if dest.exists():
             console.print(f"保留既有的 {dest}")
@@ -153,7 +154,9 @@ def init_profile() -> None:
         f"\n下一步：\n  1. 填寫 {target / 'applicant.yaml'}\n"
         f"  2. 把履歷 PDF 放進 {target / 'resumes'}（檔名就是版本名稱，例如 ds.pdf、mle.pdf）\n"
         f"  3. 在 {target / 'highlights.yaml'} 寫下經歷素材\n"
-        "  4. uv run job-radar ui"
+        f"  4. 要找的層級、職務、公司跟共用設定不同時，改 {target} 裡的 filters.yaml、"
+        "sources.yaml、companies.yaml\n"
+        "  5. uv run job-radar ui"
     )
 
 
@@ -224,7 +227,7 @@ def fetch(
         False, "--if-stale", help="上次抓取不到 20 小時就略過（開機時補抓用）"
     ),
 ) -> None:
-    """抓取 config/companies.yaml 裡每家公司的職缺（ATS 公開 API）。"""
+    """抓取公司清單（config/ 與 profile/ 的 companies.yaml）每家公司的職缺（ATS 公開 API）。"""
     from job_radar.radar.service import RadarService
 
     radar = RadarService(load_config())
@@ -243,7 +246,7 @@ def fetch(
 
 @app.command("check-companies")
 def check_companies() -> None:
-    """逐一驗證 config/companies.yaml 的公司代號。"""
+    """逐一驗證公司清單（config/ 與 profile/ 的 companies.yaml）的公司代號。"""
     import httpx
 
     from job_radar.apply.intake import USER_AGENT
