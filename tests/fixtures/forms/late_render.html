@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Client-rendered form</title></head>
+<body>
+<!-- Models a client-rendered SPA (Ashby on a cold cache, 2026-10-24): the page shows the job's
+     details at once, but the application form is rendered seconds later, already wired to React.
+     ?ms=N delays the form by N ms (default 2500). -->
+<aside><h2>Applied Scientist Intern</h2><p>Location: New York, NY</p></aside>
+<main id="root"></main>
+<script>
+  document.getElementById('root').__reactContainer$test = {};
+  const delay = Number(new URLSearchParams(location.search).get('ms') || 2500);
+  setTimeout(() => {
+    document.getElementById('root').innerHTML = `
+      <form id="application-form" action="/never">
+        <label for="first_name">First Name</label><input id="first_name" type="text">
+        <label for="email">Email</label><input id="email" type="email">
+        <button type="submit">Submit Application</button>
+      </form>`;
+    for (const el of document.querySelectorAll('input, button')) el.__reactProps$test = {};
+  }, delay);
+</script>
+</body>
+</html>

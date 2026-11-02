@@ -1,0 +1,9 @@
+{"jobs": [
+  {"id": 1001, "title": "Data Scientist, New Grad (2027)", "absolute_url": "https://job-boards.greenhouse.io/exampleco/jobs/1001",
+   "location": {"name": "San Francisco, CA"}, "company_name": "Example Co", "first_published": "2026-10-01T12:00:00-04:00",
+   "updated_at": "2026-10-20T00:00:00-04:00",
+   "content": "&lt;p&gt;Use &lt;b&gt;Python&lt;/b&gt;, SQL and statistics to run A/B tests.&lt;/p&gt;"},
+  {"id": 1002, "title": "Senior Data Scientist", "absolute_url": "https://job-boards.greenhouse.io/exampleco/jobs/1002",
+   "location": {"name": "New York, NY"}, "company_name": "Example Co", "first_published": null,
+   "content": "&lt;p&gt;Lead experimentation.&lt;/p&gt;"}
+]}

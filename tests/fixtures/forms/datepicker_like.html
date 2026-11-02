@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Date picker form</title>
+<style>
+  .area { position: relative; width: 480px; padding-top: 10px; }
+  .react-datepicker-popper { position: absolute; top: 0; left: 0; width: 320px; height: 150px;
+    background: #fff; border: 1px solid #333; z-index: 10; }
+  .react-datepicker__day { display: inline-block; width: 28px; text-align: center; cursor: pointer; }
+  .gap { height: 170px; }
+</style>
+</head>
+<body>
+<!-- Models Ramp's Ashby form (2026-10-26): "What is your graduation date?" is a react-datepicker
+     input. Typing opens its calendar, which covers the fields above it ("Still Student?") and
+     only closes on a day click or a click outside; it reads only a whole date (MM/DD/YYYY). -->
+<form id="application-form" action="/never">
+  <h2>Education</h2>
+  <div class="area">
+    <label><input type="checkbox" id="still"> Still Student?</label>
+    <div class="gap"></div>
+    <label for="grad">What is your graduation date?</label>
+    <div class="react-datepicker-wrapper"><div class="react-datepicker__input-container">
+      <input id="grad" type="text" placeholder="Pick date...">
+    </div></div>
+    <div class="react-datepicker-popper" hidden><div class="react-datepicker"><div id="days"></div></div></div>
+  </div>
+  <button type="submit">Submit Application</button>
+</form>
+<script>
+  window.__submitted = false;
+  document.getElementById('application-form').addEventListener('submit', (e) => {
+    window.__submitted = true;
+    e.preventDefault();
+  });
+  const input = document.getElementById('grad');
+  const popper = document.querySelector('.react-datepicker-popper');
+  const days = document.getElementById('days');
+  function draw() {
+    const m = input.value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    days.replaceChildren(...[1, 2, 3, 10, 20].map((d) => {
+      const cell = document.createElement('div');
+      cell.className = 'react-datepicker__day' + (m && Number(m[2]) === d ? ' react-datepicker__day--selected' : '');
+      cell.setAttribute('role', 'option');
+      cell.textContent = String(d);
+      cell.addEventListener('click', () => {
+        const month = m ? m[1] : '10';
+        const year = m ? m[3] : '2026';
+        input.value = `${month}/${String(d).padStart(2, '0')}/${year}`;
+        popper.hidden = true;
+      });
+      return cell;
+    }));
+  }
+  input.addEventListener('focus', () => { popper.hidden = false; draw(); });
+  input.addEventListener('input', draw);
+  document.addEventListener('mousedown', (e) => {
+    if (!popper.contains(e.target) && e.target !== input) popper.hidden = true;
+  });
+</script>
+</body>
+</html>

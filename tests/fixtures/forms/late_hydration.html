@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Late hydration form</title>
+<style>.select__menu { border: 1px solid #ccc; } [role="option"] { padding: 4px; cursor: pointer; }</style>
+</head>
+<body>
+<!-- Models a server-rendered React app (Greenhouse's job-boards, Remix) whose form only
+     becomes interactive once the client hydrates. Typing before hydration makes React throw
+     #426/#345 and the root never hydrates, so dropdowns stay dead while plain text inputs
+     still accept values (2026-10-23, live Coinbase form).
+     ?ms=N delays hydration by N ms (default 1500); ?never never hydrates; ?late_root marks the
+     React root only when hydration starts, with just Remix's inline context present before
+     (Point72's board on a cold cache, 2026-10-23). -->
+<main>
+  <form id="application-form" method="get" action="/never">
+    <div class="field-wrapper">
+      <label for="first_name">First Name</label>
+      <input id="first_name" type="text" value="">
+    </div>
+    <div class="field-wrapper">
+      <div class="select-shell" data-options="United States|Canada|Taiwan">
+        <label id="country-label" for="country">Country</label>
+        <div class="select__control"><div class="select__single-value"></div>
+          <input class="select__input" id="country" type="text" role="combobox" aria-autocomplete="list"
+                 aria-expanded="false" aria-labelledby="country-label" value="">
+        </div>
+      </div>
+    </div>
+    <button type="submit">Submit application</button>
+  </form>
+</main>
+<script>
+  const params = new URLSearchParams(location.search);
+  const delay = Number(params.get('ms') || 1500);
+  window.__crashed = false;
+  window.__hydrated = false;
+  window.__remixContext = {};  // inline in the server-rendered HTML, before any bundle runs
+  // hydrateRoot(document) marks the container; with ?late_root that only happens at hydration.
+  if (!params.has('late_root')) document.__reactContainer$test = {};
+
+  const crash = () => { if (!window.__hydrated) window.__crashed = true; };
+  for (const type of ['input', 'keydown', 'mousedown']) document.addEventListener(type, crash, true);
+
+  function hydrate() {
+    document.__reactContainer$test = {};
+    if (window.__crashed) return;  // the root errored out: nothing is ever attached
+    for (const el of document.querySelectorAll('input, select, textarea, button')) {
+      el.__reactFiber$test = {};
+      el.__reactProps$test = {};
+    }
+    for (const shell of document.querySelectorAll('.select-shell')) {
+      const input = shell.querySelector('input[role="combobox"]');
+      const single = shell.querySelector('.select__single-value');
+      const options = shell.dataset.options.split('|');
+      const listboxId = `react-select-${input.id}-listbox`;
+      const close = () => {
+        const menu = document.getElementById(listboxId);
+        if (menu) menu.remove();
+        input.setAttribute('aria-expanded', 'false');
+        input.removeAttribute('aria-controls');
+      };
+      const open = () => {
+        close();
+        const query = input.value.trim().toLowerCase();
+        const menu = document.createElement('div');
+        menu.id = listboxId;
+        menu.setAttribute('role', 'listbox');
+        menu.className = 'select__menu';
+        for (const label of options.filter((o) => o.toLowerCase().includes(query))) {
+          const option = document.createElement('div');
+          option.setAttribute('role', 'option');
+          option.textContent = label;
+          option.addEventListener('mousedown', () => { single.textContent = label; input.value = ''; close(); });
+          menu.append(option);
+        }
+        shell.append(menu);
+        input.setAttribute('aria-expanded', 'true');
+        input.setAttribute('aria-controls', listboxId);
+      };
+      input.addEventListener('input', open);
+    }
+    window.__hydrated = true;
+  }
+  if (!params.has('never')) setTimeout(hydrate, delay);
+</script>
+</body>
+</html>

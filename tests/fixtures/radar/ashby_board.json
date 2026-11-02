@@ -1,0 +1,6 @@
+{"jobs": [
+  {"id": "bbbb-2222", "title": "AI Engineer, University Grad", "location": "Seattle, WA", "isListed": true, "isRemote": false,
+   "publishedAt": "2026-10-10T00:00:00Z", "jobUrl": "https://jobs.ashbyhq.com/ashbyco/bbbb-2222",
+   "applyUrl": "https://jobs.ashbyhq.com/ashbyco/bbbb-2222/application", "descriptionPlain": "Build LLM agents with tool use."},
+  {"id": "cccc-3333", "title": "Hidden role", "isListed": false, "jobUrl": "https://jobs.ashbyhq.com/ashbyco/cccc-3333"}
+]}

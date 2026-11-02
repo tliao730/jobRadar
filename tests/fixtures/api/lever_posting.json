@@ -1,0 +1,15 @@
+{
+  "id": "4c1e7a2b-0000-4000-8000-000000000001",
+  "text": "Machine Learning Engineer",
+  "hostedUrl": "https://jobs.lever.co/exampleco/4c1e7a2b-0000-4000-8000-000000000001",
+  "applyUrl": "https://jobs.lever.co/exampleco/4c1e7a2b-0000-4000-8000-000000000001/apply",
+  "categories": {"location": "New York, NY", "team": "ML Platform", "commitment": "Full-time"},
+  "descriptionPlain": "Example Co is hiring an ML engineer.",
+  "description": "<div>Example Co is hiring an ML engineer.</div>",
+  "lists": [
+    {"text": "Requirements", "content": "<li>3+ years of Python</li><li>Experience with PyTorch</li>"},
+    {"text": "Responsibilities", "content": "<li>Ship models to production</li>"}
+  ],
+  "additionalPlain": "We sponsor visas.",
+  "additional": "<div>We sponsor visas.</div>"
+}

@@ -1,0 +1,111 @@
+{
+  "id": 123,
+  "title": "Data Scientist, Ranking",
+  "company_name": "Example Co",
+  "absolute_url": "https://job-boards.greenhouse.io/exampleco/jobs/123",
+  "location": {
+    "name": "San Francisco, CA"
+  },
+  "content": "&lt;div class=&quot;content-intro&quot;&gt;&lt;h2&gt;About Example Co&lt;/h2&gt;&lt;p&gt;We build search.&lt;/p&gt;&lt;/div&gt;&lt;h3&gt;What you&amp;#39;ll do&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Build ranking models&lt;/li&gt;&lt;li&gt;Run A/B tests&lt;/li&gt;&lt;/ul&gt;",
+  "questions": [
+    {
+      "required": true,
+      "label": "First Name",
+      "fields": [
+        {
+          "name": "first_name",
+          "type": "input_text",
+          "values": []
+        }
+      ]
+    },
+    {
+      "required": true,
+      "label": "Do you require visa sponsorship?",
+      "fields": [
+        {
+          "name": "question_1003",
+          "type": "multi_value_single_select",
+          "values": [
+            {
+              "label": "Yes",
+              "value": 1
+            },
+            {
+              "label": "No",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "required": true,
+      "label": "Why Example Co?",
+      "fields": [
+        {
+          "name": "question_1004",
+          "type": "textarea",
+          "values": []
+        }
+      ]
+    }
+  ],
+  "location_questions": [],
+  "compliance": [
+    {
+      "type": "eeoc",
+      "questions": [
+        {
+          "required": false,
+          "label": "Gender",
+          "fields": [
+            {
+              "name": "gender",
+              "type": "multi_value_single_select",
+              "values": [
+                {
+                  "label": "Male",
+                  "value": "1"
+                },
+                {
+                  "label": "Female",
+                  "value": "2"
+                },
+                {
+                  "label": "Decline To Self Identify",
+                  "value": "3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "demographic_questions": {
+    "header": "Voluntary Self-Identification",
+    "questions": [
+      {
+        "id": 75904,
+        "label": "Please indicate if you are a veteran or active member of the United States Armed Forces.",
+        "required": true,
+        "type": "multi_value_single_select",
+        "answer_options": [
+          {
+            "id": 1,
+            "label": "Yes, I am a veteran or active member"
+          },
+          {
+            "id": 2,
+            "label": "No, I am not a veteran or active member"
+          },
+          {
+            "id": 3,
+            "label": "I don't wish to answer"
+          }
+        ]
+      }
+    ]
+  }
+}

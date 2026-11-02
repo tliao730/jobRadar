@@ -1,0 +1,55 @@
+# 申請表單的基本資料與答案庫。只存在你的電腦（profile/ 已列在 .gitignore）。
+
+basic:
+  first_name: ""
+  last_name: ""
+  preferred_name: ""        # 沒有就留空
+  email: ""
+  phone: ""
+  country: "United States"
+  city: ""
+  state: ""
+  location: ""              # 例如 "Los Angeles, CA"
+  linkedin: ""
+  github: ""
+  website: ""
+  current_company: ""
+  current_title: ""
+
+education:
+  - school: ""
+    degree: ""              # 例如 "M.S."
+    major: ""
+    start: ""               # 例如 "2024-08"
+    end: ""                 # 例如 "2026-05"（預計畢業）
+    gpa: ""
+
+# 工作經歷：最近的放最前面。表單的 Employment 區塊（公司、職稱、起訖年月、目前在職）照這裡填。
+employment:
+  - company: ""
+    title: ""
+    location: ""
+    start: ""               # 例如 "2025-06"
+    end: ""                 # 目前的工作留空
+
+# 答案庫：題目文字符合 match（regex，不分大小寫）時自動填入 answer。
+# 選擇題會對應到最接近的選項；answer 留空的規則會被略過。
+answers:
+  - match: "(legally )?(authorized|eligible) to work"
+    answer: ""              # 例如 "Yes"
+  - match: "(require|need).*sponsorship"
+    answer: ""              # 例如 "Yes" 或 "No"
+  - match: "how did you (hear|learn) about"
+    answer: ""              # 例如 "Company website"
+  - match: "previously (worked|been employed)|ever worked (for|at)"
+    answer: ""              # 例如 "No"
+  - match: "at least 18|over the age of 18"
+    answer: ""              # 例如 "Yes"
+  - match: "willing to relocate"
+    answer: ""
+
+# 人口統計／EEO 自願揭露題：留空 = 一律留給你自己選。
+# 想自動填的話，key 是題目關鍵字、value 是要選的選項文字，例如：
+#   gender: "Decline to self-identify"
+#   veteran: "I am not a protected veteran"
+eeo: {}

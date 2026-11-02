@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Job Application for Data Scientist at Example Co</title>
+<style>
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .requiredInput { opacity: 0; pointer-events: none; position: absolute; bottom: 0; left: 0; width: 100%; }
+  .select__menu { border: 1px solid #ccc; }
+  .select-shell { position: relative; }
+</style>
+</head>
+<body>
+<!-- Modeled on job-boards.greenhouse.io markup: label[for] text inputs, react-select style
+     comboboxes (input[role=combobox] + listbox rendered on demand), a visually hidden file
+     input inside role=group, an aria-hidden required helper input, and a submit button. -->
+<main>
+  <h1 class="section-header">Data Scientist</h1>
+  <form method="get" action="/exampleco/jobs/123" id="application-form">
+    <div class="field-wrapper">
+      <label id="first_name-label" for="first_name" class="label">First Name<span aria-hidden="true">*</span></label>
+      <input id="first_name" aria-required="true" type="text" maxlength="255" autocomplete="given-name" value="">
+    </div>
+    <div class="field-wrapper">
+      <label id="last_name-label" for="last_name" class="label">Last Name<span aria-hidden="true">*</span></label>
+      <input id="last_name" aria-required="true" type="text" maxlength="255" autocomplete="family-name" value="">
+    </div>
+    <div class="field-wrapper">
+      <label id="email-label" for="email" class="label">Email<span aria-hidden="true">*</span></label>
+      <input id="email" aria-required="true" type="text" maxlength="255" value="">
+    </div>
+    <fieldset class="phone-input">
+      <div class="select-shell" data-options="United States +1|Canada +1|Taiwan +886">
+        <label id="country-label" for="country" class="label">Country<span aria-hidden="true">*</span></label>
+        <div class="select__control">
+          <div class="select__value-container"><div class="select__single-value"></div>
+            <input class="select__input" id="country" type="text" role="combobox" aria-autocomplete="list"
+                   aria-expanded="false" aria-labelledby="country-label" aria-required="true" value="">
+          </div>
+        </div>
+        <input required tabindex="-1" aria-hidden="true" class="requiredInput" value="">
+      </div>
+      <label id="phone-label" for="phone" class="label">Phone<span aria-hidden="true">*</span></label>
+      <input id="phone" aria-required="true" type="tel" maxlength="255">
+    </fieldset>
+    <div class="field-wrapper">
+      <div role="group" aria-labelledby="upload-label-resume" aria-required="true" class="file-upload">
+        <div id="upload-label-resume" class="label upload-label">Resume/CV<span class="required">*</span></div>
+        <button type="button" class="btn">Attach</button>
+        <label class="visually-hidden" for="resume">Attach</label>
+        <input id="resume" class="visually-hidden" type="file" accept=".pdf,.doc,.docx,.txt,.rtf">
+        <button type="button" class="btn">Dropbox</button>
+      </div>
+    </div>
+    <div class="field-wrapper">
+      <label id="question_1001-label" for="question_1001" class="label">LinkedIn Profile</label>
+      <input id="question_1001" type="text" maxlength="255" value="">
+    </div>
+    <div class="field-wrapper">
+      <div class="select-shell" data-options="Yes|No">
+        <label id="question_1002-label" for="question_1002" class="label">Are you open to working in-person in one of our offices 25% of the time?<span aria-hidden="true">*</span></label>
+        <div class="select__control">
+          <div class="select__value-container"><div class="select__single-value"></div>
+            <input class="select__input" id="question_1002" type="text" role="combobox" aria-autocomplete="list"
+                   aria-expanded="false" aria-labelledby="question_1002-label" aria-required="true" value="">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="field-wrapper">
+      <div class="select-shell" data-options="Yes|No">
+        <label id="question_1003-label" for="question_1003" class="label">Do you require visa sponsorship?<span aria-hidden="true">*</span></label>
+        <div class="select__control">
+          <div class="select__value-container"><div class="select__single-value"></div>
+            <input class="select__input" id="question_1003" type="text" role="combobox" aria-autocomplete="list"
+                   aria-expanded="false" aria-labelledby="question_1003-label" aria-required="true" value="">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="field-wrapper">
+      <label id="question_1004-label" for="question_1004" class="label">Why Example Co?<span aria-hidden="true">*</span></label>
+      <textarea id="question_1004" aria-required="true" rows="4" maxlength="2000"></textarea>
+    </div>
+    <div class="field-wrapper">
+      <label id="question_1005-label" for="question_1005" class="label">When is the earliest you would want to start working with us?</label>
+      <input id="question_1005" type="text" value="">
+    </div>
+    <div class="field-wrapper">
+      <div class="select-shell" data-options="Male|Female|Decline To Self Identify">
+        <label id="gender-label" for="gender" class="label">Gender</label>
+        <div class="select__control">
+          <div class="select__value-container"><div class="select__single-value"></div>
+            <input class="select__input" id="gender" type="text" role="combobox" aria-autocomplete="list"
+                   aria-expanded="false" aria-labelledby="gender-label" value="">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="application--submit">
+      <button type="submit" class="btn btn--rounded">Submit application</button>
+    </div>
+  </form>
+</main>
+<script>
+  // Submission trap: tests assert this never fires during prefill.
+  window.__submitted = false;
+  document.getElementById('application-form').addEventListener('submit', (event) => {
+    window.__submitted = true;
+    event.preventDefault();
+  });
+
+  // Minimal react-select stand-in: typing filters options in a listbox; clicking an option
+  // stores it in .select__single-value and clears the search input.
+  for (const shell of document.querySelectorAll('.select-shell')) {
+    const input = shell.querySelector('input[role="combobox"]');
+    const single = shell.querySelector('.select__single-value');
+    const options = shell.dataset.options.split('|');
+    const listboxId = `react-select-${input.id}-listbox`;
+    const close = () => {
+      const menu = document.getElementById(listboxId);
+      if (menu) menu.remove();
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-controls');
+    };
+    const open = () => {
+      close();
+      const query = input.value.trim().toLowerCase();
+      const menu = document.createElement('div');
+      menu.id = listboxId;
+      menu.setAttribute('role', 'listbox');
+      menu.className = 'select__menu';
+      for (const label of options.filter((o) => o.toLowerCase().includes(query))) {
+        const option = document.createElement('div');
+        option.setAttribute('role', 'option');
+        option.textContent = label;
+        option.addEventListener('click', () => { single.textContent = label; input.value = ''; close(); });
+        menu.append(option);
+      }
+      shell.append(menu);
+      input.setAttribute('aria-expanded', 'true');
+      input.setAttribute('aria-controls', listboxId);
+    };
+    input.addEventListener('focus', open);
+    input.addEventListener('input', open);
+  }
+</script>
+</body>
+</html>

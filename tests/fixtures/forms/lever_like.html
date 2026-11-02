@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Example Co - Machine Learning Engineer</title>
+<style>
+  .hidden, .resume-status { display: none; }
+  ul { list-style: none; padding: 0; }
+</style>
+</head>
+<body>
+<!-- Modeled on jobs.lever.co/{company}/{id}/apply: labels that wrap both question text and the
+     input, ✱ required markers, hidden status text inside labels, checkbox "cards", EEO selects,
+     a hidden hCaptcha submit button and the visible submit button. -->
+<form id="application-form" method="POST" action="/exampleco/abc/apply">
+  <ul>
+    <li class="application-question resume">
+      <label>
+        <div class="application-label">Resume/CV</div>
+        <div class="application-field">
+          <span class="resume-upload-button">ATTACH RESUME/CV</span>
+          <span class="resume-status">Couldn't auto-read resume.</span>
+          <input type="file" id="resume-upload-input" name="resume">
+        </div>
+      </label>
+    </li>
+    <li class="application-question">
+      <label><div class="application-label">Full name<span class="required">✱</span></div>
+        <div class="application-field"><input type="text" name="name" required></div></label>
+    </li>
+    <li class="application-question">
+      <div class="application-label multiple-select">Pronouns</div>
+      <div class="application-field"><ul>
+        <li><label><input type="checkbox" name="pronouns" value="He/him"><span class="application-answer-alternative">He/him</span></label></li>
+        <li><label><input type="checkbox" name="pronouns" value="She/her"><span class="application-answer-alternative">She/her</span></label></li>
+        <li><label><input type="checkbox" name="pronouns" value="They/them"><span class="application-answer-alternative">They/them</span></label></li>
+      </ul></div>
+    </li>
+    <li class="application-question">
+      <label><div class="application-label">Email<span class="required">✱</span></div>
+        <div class="application-field"><input type="email" name="email" required></div></label>
+    </li>
+    <li class="application-question">
+      <label><div class="application-label">Phone<span class="required">✱</span></div>
+        <div class="application-field"><input type="text" name="phone" required></div></label>
+    </li>
+    <li class="application-question">
+      <label><div class="application-label">Current company</div>
+        <div class="application-field"><input type="text" name="org"></div></label>
+    </li>
+    <li class="application-question">
+      <label><div class="application-label">LinkedIn URL</div>
+        <div class="application-field"><input type="text" name="urls[LinkedIn]"></div></label>
+    </li>
+    <li class="application-question">
+      <label><div class="application-label">GitHub URL</div>
+        <div class="application-field"><input type="text" name="urls[GitHub]"></div></label>
+    </li>
+  </ul>
+
+  <div class="application-additional" data-qa="additional-cards">
+    <h4 data-qa="card-name">Work Eligibility</h4>
+    <input type="hidden" name="cards[card-1][baseTemplate]" value="{}">
+    <ul>
+      <li class="application-question custom-question"><div>
+        <div class="application-label full-width multiple-select"><div class="text">Are you eligible to work in the United States?</div></div>
+        <div class="application-field full-width"><ul data-qa="checkboxes">
+          <li><label><input type="checkbox" name="cards[card-1][field0]" value="Yes"><span class="application-answer-alternative">Yes</span></label></li>
+          <li><label><input type="checkbox" name="cards[card-1][field0]" value="No"><span class="application-answer-alternative">No</span></label></li>
+        </ul></div>
+      </div></li>
+      <li class="application-question custom-question"><div>
+        <div class="application-label full-width"><div class="text">Will you now or in the future require visa sponsorship?<span class="required">✱</span></div></div>
+        <div class="application-field full-width"><ul data-qa="multiple-choice">
+          <li><label><input type="radio" name="cards[card-1][field1]" value="Yes" required><span class="application-answer-alternative">Yes</span></label></li>
+          <li><label><input type="radio" name="cards[card-1][field1]" value="No"><span class="application-answer-alternative">No</span></label></li>
+        </ul></div>
+      </div></li>
+      <li class="application-question custom-question">
+        <label><div class="application-label">Additional information</div>
+          <div class="application-field"><textarea name="comments"></textarea></div></label>
+      </li>
+    </ul>
+  </div>
+
+  <div class="eeo-section">
+    <li class="application-question">
+      <label><div class="application-label">Gender</div>
+        <div class="application-field"><select name="eeo[gender]">
+          <option value="">Select ...</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Decline to self-identify">Decline to self-identify</option>
+        </select></div></label>
+    </li>
+  </div>
+
+  <input type="hidden" name="h-captcha-response" value="">
+  <button id="hcaptchaSubmitBtn" type="submit" class="hidden"></button>
+  <button id="btn-submit" type="submit" class="postings-btn">Submit application</button>
+</form>
+<script>
+  window.__submitted = false;
+  document.getElementById('application-form').addEventListener('submit', (event) => {
+    window.__submitted = true;
+    event.preventDefault();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+# 技能詞彙：JD 和我的素材都用這張表比對，name 是顯示名稱，match 是 regex（不分大小寫）。
+# 職缺雷達用它算「技能重疊」；JD 常見但這裡沒有的技能不會被計算，可以自己加。
+skills:
+  - {name: Python, match: '\bpython\b'}
+  - {name: SQL, match: '\bsql\b'}
+  - {name: R, match: '\bR\b(?! ?&)'}
+  - {name: Java, match: '\bjava\b(?!script)'}
+  - {name: Scala, match: '\bscala\b'}
+  - {name: Go, match: '\bgolang\b'}
+  - {name: C++, match: 'c\+\+'}
+  - {name: JavaScript/TypeScript, match: '\bjavascript\b|\btypescript\b'}
+  - {name: PyTorch, match: '\bpytorch\b|\btorch\b'}
+  - {name: TensorFlow, match: '\btensorflow\b|\bkeras\b'}
+  - {name: JAX, match: '\bjax\b'}
+  - {name: scikit-learn, match: 'scikit|sklearn'}
+  - {name: XGBoost/LightGBM, match: 'xgboost|lightgbm|catboost|gradient boost'}
+  - {name: pandas/NumPy, match: '\bpandas\b|\bnumpy\b'}
+  - {name: Spark, match: '\bspark\b|pyspark'}
+  - {name: Airflow, match: '\bairflow\b'}
+  - {name: dbt, match: '\bdbt\b'}
+  - {name: Kafka, match: '\bkafka\b'}
+  - {name: Snowflake, match: '\bsnowflake\b'}
+  - {name: BigQuery, match: 'bigquery'}
+  - {name: Databricks, match: 'databricks'}
+  - {name: AWS, match: '\baws\b|amazon web services|\bs3\b|\bglue\b|sagemaker'}
+  - {name: GCP, match: '\bgcp\b|google cloud'}
+  - {name: Azure, match: '\bazure\b'}
+  - {name: Docker, match: '\bdocker\b|container'}
+  - {name: Kubernetes, match: 'kubernetes|\bk8s\b'}
+  - {name: CI/CD, match: 'ci/cd|continuous integration'}
+  - {name: Tableau, match: '\btableau\b'}
+  - {name: Looker, match: '\blooker\b'}
+  - {name: Power BI, match: 'power ?bi'}
+  - {name: Statistics, match: 'statistic'}
+  - {name: A/B testing, match: 'a/b test|experimentation|experiment design|online experiment'}
+  - {name: Causal inference, match: 'causal'}
+  - {name: Machine learning, match: 'machine learning|\bml\b'}
+  - {name: Deep learning, match: 'deep learning|neural network'}
+  - {name: NLP, match: '\bnlp\b|natural language'}
+  - {name: LLMs, match: '\bllms?\b|large language model|generative ai|\bgenai\b'}
+  - {name: LLM agents, match: '\bagents?\b|agentic|tool use'}
+  - {name: RAG, match: '\brag\b|retrieval[- ]augmented'}
+  - {name: Computer vision, match: 'computer vision|image (recognition|classification)'}
+  - {name: Time series, match: 'time[- ]series|forecast'}
+  - {name: Recommender systems, match: 'recommend(er|ation)|ranking|personaliz'}
+  - {name: Optimization, match: 'optimization|operations research'}
+  - {name: Graph ML, match: '\bgnns?\b|graph neural|graph (ml|learning)|graph models?'}
+  - {name: Data pipelines, match: 'data pipeline|\betl\b|\belt\b'}
+  - {name: Data warehousing, match: 'data warehouse|lakehouse|data lake'}
+  - {name: HPC/distributed training, match: '\bhpc\b|distributed training|slurm|\bgpu\b'}
+  - {name: MLOps, match: 'mlops|model (serving|deployment)|mlflow'}
+  - {name: Benchmarking/evaluation, match: 'benchmark|evaluation'}
+  - {name: Git, match: '\bgit\b|github'}

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Employment and education</title>
+<style>.select__menu { border: 1px solid #ccc; } [role="option"] { padding: 4px; cursor: pointer; }</style></head>
+<body>
+<!-- Greenhouse job-boards' Employment / Education blocks (2026-10, Coinbase): section names
+     are <p> inside a .header-row / .education--header, ids carry the entry index, months
+     are react-select dropdowns and years are text inputs. -->
+<h1 class="section-header">Data Science Intern</h1>
+<form id="application-form" method="get" action="/never">
+  <div class="field-wrapper"><label for="first_name">First Name</label><input id="first_name" type="text"></div>
+  <div class="employment--container"><div class="employment-form"><hr>
+    <div class="header-row"><p class="body body--medium">Employment</p></div>
+    <div class="input-wrapper"><label id="company-name-0-label" for="company-name-0">Company name*</label>
+      <input id="company-name-0" type="text" aria-required="true"></div>
+    <div class="input-wrapper"><label id="title-0-label" for="title-0">Title*</label>
+      <input id="title-0" type="text" aria-required="true"></div>
+    <div class="select-shell" data-options="January|February|March|April|May|June|July|August|September|October|November|December">
+      <label id="start-date-month-0-label" for="start-date-month-0">Start date month*</label>
+      <div class="select__control"><div class="select__single-value"></div>
+        <input class="select__input" id="start-date-month-0" type="text" role="combobox" aria-autocomplete="list"
+               aria-expanded="false" aria-labelledby="start-date-month-0-label" aria-required="true"></div>
+    </div>
+    <div class="input-wrapper"><label for="start-date-year-0">Start date year*</label>
+      <input id="start-date-year-0" type="text" maxlength="4" aria-required="true"></div>
+    <div class="select-shell" data-options="January|February|March|April|May|June|July|August|September|October|November|December">
+      <label id="end-date-month-0-label" for="end-date-month-0">End date month*</label>
+      <div class="select__control"><div class="select__single-value"></div>
+        <input class="select__input" id="end-date-month-0" type="text" role="combobox" aria-autocomplete="list"
+               aria-expanded="false" aria-labelledby="end-date-month-0-label"></div>
+    </div>
+    <div class="input-wrapper"><label for="end-date-year-0">End date year*</label>
+      <input id="end-date-year-0" type="text" maxlength="4"></div>
+    <div class="checkbox" id="current-role-0">
+      <input type="checkbox" id="current-role-0_1" name="current-role-0" value="1">
+      <label for="current-role-0_1">Current role</label></div>
+  </div>
+    <button class="add-another-button" type="button" data-block="employment-form">Add another</button>
+  </div>
+  <div class="education--container"><div class="education--form"><hr>
+    <div class="education--header"><p class="body body--medium">Education</p></div>
+    <div class="select-shell" data-options="University of Southern California~United States~usc.edu|University of California, Los Angeles~United States~ucla.edu|National Taipei University of Technology~Taiwan~ntut.edu.tw|0 - Other">
+      <label id="school--0-label" for="school--0">School*</label>
+      <div class="select__control"><div class="select__single-value"></div>
+        <div><div><div><div><div><div>
+        <input class="select__input" id="school--0" type="text" role="combobox" aria-autocomplete="list"
+               aria-expanded="false" aria-labelledby="school--0-label">
+        </div></div></div></div></div></div></div>
+    </div>
+    <div class="select-shell" data-options="Bachelor's Degree|Master's Degree|Master of Business Administration (M.B.A.)|Doctor of Philosophy (Ph.D.)">
+      <label id="degree--0-label" for="degree--0">Degree*</label>
+      <div class="select__control"><div class="select__single-value"></div>
+        <input class="select__input" id="degree--0" type="text" role="combobox" aria-autocomplete="list"
+               aria-expanded="false" aria-labelledby="degree--0-label"></div>
+    </div>
+    <div class="select-shell" data-options="Computer Science|Data Science|Statistics">
+      <label id="discipline--0-label" for="discipline--0">Discipline*</label>
+      <div class="select__control"><div class="select__single-value"></div>
+        <input class="select__input" id="discipline--0" type="text" role="combobox" aria-autocomplete="list"
+               aria-expanded="false" aria-labelledby="discipline--0-label"></div>
+    </div>
+  </div>
+    <button class="add-another-button" type="button" data-block="education--form">Add another</button>
+  </div>
+  <div class="field-wrapper"><label for="question_9">When did you start writing Python?</label>
+    <input id="question_9" type="text"></div>
+  <button type="submit">Submit application</button>
+</form>
+<script>
+  // "Add another" clones the block's first entry with the next index (-0 → -1, --0 → --1).
+  for (const button of document.querySelectorAll('.add-another-button')) {
+    button.addEventListener('click', () => {
+      const forms = button.parentElement.querySelectorAll(`.${button.dataset.block}`);
+      const n = forms.length;
+      const copy = forms[0].cloneNode(true);
+      copy.innerHTML = copy.innerHTML.replace(/(-{1,2})0(?![0-9])/g, `$1${n}`);
+      for (const el of copy.querySelectorAll('[data-jr-id]')) el.removeAttribute('data-jr-id');
+      for (const el of copy.querySelectorAll('input')) { el.value = ''; el.checked = false; }
+      for (const el of copy.querySelectorAll('.select__single-value')) el.textContent = '';
+      button.before(copy);
+      for (const shell of copy.querySelectorAll('.select-shell')) wire(shell);
+    });
+  }
+  for (const shell of document.querySelectorAll('.select-shell')) wire(shell);
+
+  // react-select stand-in: options containing the typed text (a search box, not a fuzzy one).
+  function wire(shell) {
+    const input = shell.querySelector('input[role="combobox"]');
+    const single = shell.querySelector('.select__single-value');
+    const options = shell.dataset.options.split('|');
+    const listboxId = `react-select-${input.id}-listbox`;
+    const close = () => {
+      const menu = document.getElementById(listboxId);
+      if (menu) menu.remove();
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-controls');
+    };
+    const open = () => {
+      close();
+      const query = input.value.trim().toLowerCase();
+      const hits = options.filter((o) => o.toLowerCase().includes(query));
+      if (!hits.length) return;
+      const menu = document.createElement('div');
+      menu.id = listboxId;
+      menu.setAttribute('role', 'listbox');
+      menu.className = 'select__menu';
+      for (const label of hits) {
+        // "Name~Country~domain" renders like Ashby's school list: the name, then detail lines.
+        const [name, ...details] = label.split('~');
+        const option = document.createElement('div');
+        option.setAttribute('role', 'option');
+        option.textContent = name;
+        for (const detail of details) option.append(Object.assign(document.createElement('div'), { textContent: detail }));
+        option.addEventListener('click', () => { single.textContent = name; input.value = ''; close(); });
+        menu.append(option);
+      }
+      shell.append(menu);
+      input.setAttribute('aria-expanded', 'true');
+      input.setAttribute('aria-controls', listboxId);
+    };
+    input.addEventListener('input', open);
+  }
+</script>
+</body>
+</html>

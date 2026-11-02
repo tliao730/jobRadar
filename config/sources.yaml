@@ -1,0 +1,24 @@
+# 職缺網站搜尋（不登入）。結果會和 ATS 職缺比對：對得到就用 ATS 申請頁（能自動填），
+# 對不到的列成「需要自己開啟」。遇到 429、登入頁或驗證頁就停止該網站，記在抓取結果裡。
+queries:
+  - AI engineer new grad
+  - data scientist new grad
+  - machine learning engineer new grad
+  - data engineer new grad
+  - data analyst new grad
+  - AI engineer
+  - data scientist
+  - machine learning engineer
+  - data engineer
+  - data analyst
+location: United States
+days: 7                 # 只看最近幾天發布的
+
+linkedin:
+  enabled: true
+  pages_per_query: 2    # 一頁 10 筆
+  delay_seconds: [3, 8] # 每個請求之間隨機等待；LinkedIn 連續請求很快就 429
+
+jobright:
+  enabled: true
+  delay_seconds: [5, 10] # 每個關鍵字一個請求、一次 20 筆；連續太多次會被擋

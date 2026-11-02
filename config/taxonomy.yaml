@@ -1,0 +1,53 @@
+# 職缺領域清單（職缺雷達的 LLM 抽取只能從這裡選）。
+# 每項附一句定義：只給名稱時分類不穩定。清單外的領域會記在 other_domains，供人工決定是否加入。
+domains:
+  - id: recommendation_systems
+    description: Personalized recommendations, feeds, candidate generation and ranking.
+  - id: search_ranking
+    description: Search relevance, query understanding, retrieval, learning-to-rank.
+  - id: ads_adtech
+    description: Ad targeting, CTR/CVR prediction, bidding, auctions, ad measurement.
+  - id: time_series_forecasting
+    description: Demand, traffic, or financial forecasting from temporal data.
+  - id: fraud_risk
+    description: Fraud detection, credit risk, transaction anomaly detection.
+  - id: trust_safety
+    description: Content moderation, integrity, spam and abuse, policy enforcement.
+  - id: nlp_llm
+    description: Text modeling; LLM training, fine-tuning, and evaluation.
+  - id: llm_agents
+    description: LLM-powered applications, agents, tool use, RAG.
+  - id: computer_vision
+    description: Image and video understanding, detection, segmentation.
+  - id: causal_inference
+    description: Observational causal methods, uplift modeling, econometrics.
+  - id: experimentation_ab_testing
+    description: A/B test design and analysis, experimentation platforms.
+  - id: product_analytics
+    description: Product metrics, funnels, user behavior analysis guiding product decisions.
+  - id: pricing_optimization
+    description: Pricing, revenue management, mathematical optimization.
+  - id: marketing_growth_analytics
+    description: Marketing mix, attribution, acquisition, retention, LTV.
+  - id: supply_chain_operations
+    description: Logistics, inventory, routing, marketplace operations.
+  - id: healthcare_biotech
+    description: Clinical, genomics, drug discovery, medical data.
+  - id: finance_quant
+    description: Quantitative finance, trading, portfolio and financial modeling.
+  - id: ml_infrastructure_mlops
+    description: Training and serving infrastructure, feature stores, ML platforms.
+  - id: data_engineering
+    description: Data pipelines, warehousing, ETL, data quality.
+  - id: business_intelligence
+    description: Dashboards, reporting, metric definitions, BI tooling.
+  - id: backend_distributed_systems
+    description: Backend services, APIs, distributed systems, databases.
+  - id: frontend_web
+    description: Web frontend, UI engineering, full-stack product work.
+  - id: mobile
+    description: iOS and Android applications.
+  - id: cloud_infra_devops
+    description: Cloud infrastructure, platform engineering, CI/CD, reliability.
+  - id: security
+    description: Application, infrastructure and data security.

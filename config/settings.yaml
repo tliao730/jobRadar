@@ -1,0 +1,36 @@
+# 可調整的設定。密鑰放在 .env。
+
+paths:
+  profile_dir: profile
+  data_dir: data
+
+browser:
+  # chrome：使用已安裝的 Google Chrome。設為 null 改用 Playwright 內建的 Chromium
+  # （需先執行 uv run playwright install chromium）。
+  channel: chrome
+  user_data_dir: data/browser-profile
+
+llm:
+  effort: medium            # low / medium / high / xhigh / max
+  max_tokens: 16000
+  max_jd_chars: 12000
+  fallbacks: default        # 被安全機制拒絕時由 API 自動改用備援模型；設 null 關閉
+  prices:                   # 美元 / 每百萬 tokens，用來估算花費
+    claude-sonnet-5-5: {input: 2.0, output: 10.0}
+    claude-opus-5-5: {input: 4.0, output: 20.0}
+    claude-haiku-5-5: {input: 0.10, output: 0.50}
+
+apply:
+  # profile/resumes/ 底下的檔名（不含 .pdf）；沒有規則符合時使用
+  default_resume: null
+  # 依職稱自動建議履歷版本，由上而下第一個符合的為準（只考慮實際存在的 PDF）
+  resume_rules:
+    - {variant: mle, title_pattern: "machine learning|\\bml\\b|\\bai\\b|applied scientist"}
+    - {variant: de, title_pattern: "data engineer"}
+    - {variant: da, title_pattern: "data analyst|analytics|business intelligence|\\bbi\\b"}
+    - {variant: ds, title_pattern: "data scien"}
+    - {variant: swe, title_pattern: "software|backend|back-end|frontend|front-end|full[- ]?stack|engineer"}
+
+ui:
+  host: 127.0.0.1
+  port: 8765

@@ -1,0 +1,12 @@
+# 經歷素材庫：申請草稿只會引用這裡、履歷 PDF 和 applicant.yaml 裡的事實。
+# 每一項寫清楚情境、做了什麼、結果與數字；id 會出現在草稿的「依據」中。
+# 格式範例（把 # 拿掉再改成你自己的內容）：
+#
+# - id: rec-ranking-intern
+#   context: "Data Science Intern, Example Co (Summer 2025)"
+#   did: "Rebuilt the candidate ranking model with LightGBM LambdaRank"
+#   results:
+#     - "CTR +4.2% in a two-week A/B test"
+#     - "Cut serving latency from 80ms to 35ms"
+#   skills: [LightGBM, learning-to-rank, A/B testing, Python, SQL]
+[]

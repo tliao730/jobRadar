@@ -1,0 +1,75 @@
+# 職缺雷達抓取的公司：platform 是 greenhouse / lever / ashby，token 是職缺板網址裡的代號
+# （job-boards.greenhouse.io/{token}、jobs.lever.co/{token}、jobs.ashbyhq.com/{token}）。
+# 加公司後執行 `uv run job-radar check-companies` 驗證；不想抓的設 enabled: false。
+# 2026-10-23 驗證過的初始清單，想去的公司請自己增減。
+companies:
+  - {name: "Cohere", platform: ashby, token: cohere}
+  - {name: "Decagon", platform: ashby, token: decagon}
+  - {name: "ElevenLabs", platform: ashby, token: elevenlabs}
+  - {name: "Harvey", platform: ashby, token: harvey}
+  - {name: "Linear", platform: ashby, token: linear}
+  - {name: "Modal", platform: ashby, token: modal}
+  - {name: "Notion", platform: ashby, token: notion}
+  - {name: "OpenAI", platform: ashby, token: openai}
+  - {name: "Perplexity", platform: ashby, token: perplexity}
+  - {name: "Pinecone", platform: ashby, token: pinecone}
+  - {name: "Ramp", platform: ashby, token: ramp}
+  - {name: "Replit", platform: ashby, token: replit}
+  - {name: "Runway", platform: ashby, token: runway}
+  - {name: "Sierra", platform: ashby, token: sierra}
+  - {name: "Supabase", platform: ashby, token: supabase}
+  - {name: "Vanta", platform: ashby, token: vanta}
+  - {name: "Writer", platform: ashby, token: writer}
+  - {name: "Affirm", platform: greenhouse, token: affirm}
+  - {name: "Airbnb", platform: greenhouse, token: airbnb}
+  - {name: "Airtable", platform: greenhouse, token: airtable}
+  - {name: "Anthropic", platform: greenhouse, token: anthropic}
+  - {name: "Asana", platform: greenhouse, token: asana}
+  - {name: "Brex", platform: greenhouse, token: brex}
+  - {name: "Carta", platform: greenhouse, token: carta}
+  - {name: "Chime", platform: greenhouse, token: chime}
+  - {name: "Cloudflare", platform: greenhouse, token: cloudflare}
+  - {name: "Coinbase", platform: greenhouse, token: coinbase}
+  - {name: "Databricks", platform: greenhouse, token: databricks}
+  - {name: "Datadog", platform: greenhouse, token: datadog}
+  - {name: "Discord", platform: greenhouse, token: discord}
+  - {name: "DoorDash", platform: greenhouse, token: doordashusa}
+  - {name: "Dropbox", platform: greenhouse, token: dropbox}
+  - {name: "Duolingo", platform: greenhouse, token: duolingo}
+  - {name: "Elastic", platform: greenhouse, token: elastic}
+  - {name: "Faire", platform: greenhouse, token: faire}
+  - {name: "Figma", platform: greenhouse, token: figma}
+  - {name: "Flexport", platform: greenhouse, token: flexport}
+  - {name: "GitLab", platform: greenhouse, token: gitlab}
+  - {name: "Gusto", platform: greenhouse, token: gusto}
+  - {name: "IMC Trading", platform: greenhouse, token: imc}
+  - {name: "Instacart", platform: greenhouse, token: instacart}
+  - {name: "Jane Street", platform: greenhouse, token: janestreet}
+  - {name: "Jump Trading", platform: greenhouse, token: jumptrading}
+  - {name: "Lyft", platform: greenhouse, token: lyft}
+  - {name: "MongoDB", platform: greenhouse, token: mongodb}
+  - {name: "Nextdoor", platform: greenhouse, token: nextdoor}
+  - {name: "Nuro", platform: greenhouse, token: nuro}
+  - {name: "Okta", platform: greenhouse, token: okta}
+  - {name: "Oscar", platform: greenhouse, token: oscar}
+  - {name: "Peloton", platform: greenhouse, token: peloton}
+  - {name: "Pinterest", platform: greenhouse, token: pinterest}
+  - {name: "Point72", platform: greenhouse, token: point72}
+  - {name: "Reddit", platform: greenhouse, token: reddit}
+  - {name: "Robinhood", platform: greenhouse, token: robinhood}
+  - {name: "Roblox", platform: greenhouse, token: roblox}
+  - {name: "Samsara", platform: greenhouse, token: samsara}
+  - {name: "Scale AI", platform: greenhouse, token: scaleai}
+  - {name: "SoFi", platform: greenhouse, token: sofi}
+  - {name: "Squarespace", platform: greenhouse, token: squarespace}
+  - {name: "Stripe", platform: greenhouse, token: stripe}
+  - {name: "Toast", platform: greenhouse, token: toast}
+  - {name: "Twitch", platform: greenhouse, token: twitch}
+  - {name: "Vercel", platform: greenhouse, token: vercel}
+  - {name: "Waymo", platform: greenhouse, token: waymo}
+  - {name: "Palantir", platform: lever, token: palantir}
+  - {name: "Shield AI", platform: lever, token: shieldai}
+  - {name: "Spotify", platform: lever, token: spotify}
+  - {name: "Zoox", platform: lever, token: zoox}
+  - {name: "Accenture Federal Services", platform: greenhouse, token: accenturefederalservices}
+  - {name: "Agoda", platform: greenhouse, token: agoda}

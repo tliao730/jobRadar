@@ -1,0 +1,15 @@
+{
+  "apiVersion": "1",
+  "jobs": [
+    {"id": "11111111-1111-4111-8111-111111111111", "title": "Data Analyst", "location": "Remote - US",
+     "descriptionPlain": "Analyze product metrics.", "descriptionHtml": "<p>Analyze product metrics.</p>",
+     "isListed": true, "isRemote": true,
+     "jobUrl": "https://jobs.ashbyhq.com/exampleco/11111111-1111-4111-8111-111111111111",
+     "applyUrl": "https://jobs.ashbyhq.com/exampleco/11111111-1111-4111-8111-111111111111/application"},
+    {"id": "22222222-2222-4222-8222-222222222222", "title": "AI Engineer", "location": "Seattle, WA",
+     "descriptionPlain": "Build LLM agents.", "descriptionHtml": "<p>Build LLM agents.</p>",
+     "isListed": true, "isRemote": false,
+     "jobUrl": "https://jobs.ashbyhq.com/exampleco/22222222-2222-4222-8222-222222222222",
+     "applyUrl": "https://jobs.ashbyhq.com/exampleco/22222222-2222-4222-8222-222222222222/application"}
+  ]
+}

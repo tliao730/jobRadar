@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Job Radar 申請助手",
+  "version": "0.1.0",
+  "description": "在申請頁旁邊顯示要回答的題目與草稿。只讀取目前分頁的網址，不會碰網頁內容。",
+  "permissions": ["sidePanel", "tabs"],
+  "background": { "service_worker": "background.js" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "action": {
+    "default_title": "打開 Job Radar 側邊欄",
+    "default_icon": { "16": "icon-16.png", "32": "icon-32.png", "48": "icon-48.png", "128": "icon-128.png" }
+  },
+  "icons": { "16": "icon-16.png", "32": "icon-32.png", "48": "icon-48.png", "128": "icon-128.png" },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Ctrl+Shift+Y", "mac": "Command+Shift+Y" },
+      "description": "打開 Job Radar 側邊欄"
+    }
+  }
+}
