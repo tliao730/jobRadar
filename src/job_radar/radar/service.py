@@ -18,7 +18,7 @@ from job_radar.apply.intake import USER_AGENT
 from job_radar.config import AppConfig
 from job_radar.profile import ProfileError, load_profile
 from job_radar.radar.fetchers import FETCHERS, FetchError
-from job_radar.radar.match import Match, Matcher, my_skills
+from job_radar.radar.match import Match, Matcher, active_roles, my_skills
 from job_radar.radar.models import ATS_PLATFORMS, Company, RadarConfig, load_radar_config
 from job_radar.radar.resolve import Resolver, ats_job_id
 from job_radar.radar.sites import SITES
@@ -124,6 +124,11 @@ class RadarService:
             self.store.record_run("discover", boards, utcnow())
         self.store.link_ats(links)
         log.info("職缺網站的 %d 筆對到 ATS 職缺（共 %d 筆待比對）", len(links), len(pending))
+
+    def roles(self) -> list[dict]:
+        """The role families in use, in order, with their display names (radar page filters)."""
+        roles = active_roles(self.radar_config().filters)
+        return [{"id": r.id, "name": r.name or r.id} for r in roles]
 
     def found_companies(self) -> list[dict]:
         """ATS boards found through job-site company names that are not in companies.yaml."""

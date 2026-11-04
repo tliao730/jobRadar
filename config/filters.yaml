@@ -2,14 +2,19 @@
 # 這是大家共用的預設（在 git 裡）；個人不同的部分寫在 profile/filters.yaml，只寫要改的設定。
 
 # 職務類別：職稱符合 titles 任一條就屬於該類別（由上而下第一個符合的為準）。
-# weight 是偏好（0–1），enabled: false 整類不看。
+# name 是推薦頁上顯示的名稱；weight 是偏好（0–1）；enabled: false 整類不看。
+# 只想看其中幾類（例如找硬體的人），在 profile/filters.yaml 寫 only_roles: [hardware, embedded]，
+# 沒列到的都不看，不用一類一類關掉。這裡沒有的類別也可以在 profile/filters.yaml 新增。
 roles:
-  - {id: mle, weight: 1.0, titles: ['machine learning', '\bml\b', 'mlops', 'applied scientist', '\bai/ml\b']}
-  - {id: ai_engineer, weight: 0.9, titles: ['\bai engineer', '\bllm\b', 'generative ai', '\bgenai\b', 'ai research']}
-  - {id: ds, weight: 1.0, titles: ['data scien', 'research scientist', 'quantitative (analyst|researcher)', 'decision scien', 'statistician']}
-  - {id: de, weight: 0.7, titles: ['data engineer', 'analytics engineer', 'data platform', 'data infrastructure']}
-  - {id: da, weight: 0.6, titles: ['data analyst', 'business intelligence', 'product analyst', 'analytics analyst', '\bbi (analyst|engineer)']}
-  - {id: swe, weight: 0.5, titles: ['software engineer', 'software developer', 'backend', 'back-end', 'full[- ]?stack', 'member of technical staff']}
+  - {id: mle, name: MLE, weight: 1.0, titles: ['machine learning', '\bml\b', 'mlops', 'applied scientist', '\bai/ml\b']}
+  - {id: ai_engineer, name: AI Engineer, weight: 0.9, titles: ['\bai engineer', '\bllm\b', 'generative ai', '\bgenai\b', 'ai research']}
+  - {id: ds, name: Data Science, weight: 1.0, titles: ['data scien', 'research scientist', 'quantitative (analyst|researcher)', 'decision scien', 'statistician']}
+  - {id: de, name: Data Eng, weight: 0.7, titles: ['data engineer', 'analytics engineer', 'data platform', 'data infrastructure']}
+  - {id: da, name: Analyst, weight: 0.6, titles: ['data analyst', 'business intelligence', 'product analyst', 'analytics analyst', '\bbi (analyst|engineer)']}
+  # 硬體方向：預設不看，找硬體的人用 only_roles 打開（放在 swe 前面，Embedded Software Engineer 才會歸到 embedded）。
+  - {id: hardware, name: Hardware, weight: 1.0, enabled: false, titles: ['\bhardware\b', 'electrical', '\basic\b', '\bfpga\b', '\brtl\b', 'verification engineer', '(design|hardware|silicon|asic) verification', '(hardware|silicon|post-silicon|product) validation', 'physical design', '(?<!non[- ])\bsilicon\b', '\bsoc\b', 'analog', 'mixed[- ]signal', 'circuit', 'semiconductor', '\bpcb\b', 'board design', '\bdft\b', 'signal integrity', '\brf\b', 'photonics', '\bpower electronics\b']}
+  - {id: embedded, name: Embedded, weight: 1.0, enabled: false, titles: ['embedded', 'firmware']}
+  - {id: swe, name: SWE, weight: 0.5, titles: ['software engineer', 'software developer', 'backend', 'back-end', 'full[- ]?stack', 'member of technical staff']}
 
 # 職稱含這些字就不看（業務、管理職等）。
 # 最後一條：職稱寫 PhD 但沒寫 MS / Master 的（只收博士生）。

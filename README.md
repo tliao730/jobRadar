@@ -2,7 +2,7 @@
 
 在自己的 Mac 上跑的求職小幫手，有兩個功能：
 
-- **推薦職缺**：每天早上自動抓新職缺，依你的條件排序。職缺來自 Greenhouse、Lever、Ashby 上約 70 家公司的公開職缺板、Simplify 的 New Grad 清單、LinkedIn。
+- **推薦職缺**：每天早上自動抓新職缺，依你的條件排序。職缺來自 Greenhouse、Lever、Ashby 上約 70 家公司的公開職缺板、Simplify 的 New Grad 清單、LinkedIn。預設找的是**資料／AI／軟體**方向的 New Grad 職缺，其他方向（例如硬體）照第 5 步改一下設定就好。
 - **申請助手**：替你打開申請頁、自動填好基本資料、經歷和常見題目，再列出還要你自己填的題目。**送出永遠是你自己按**，助手不會替你送出。
 
 你的資料（個人資料、履歷、申請紀錄）都只存在你自己的電腦上，不會上傳到 git。
@@ -43,18 +43,39 @@ uv run job-radar init-profile
 - `profile/resumes/`：把履歷 PDF 放進去。
 - `profile/highlights.yaml`：經歷素材，選填，但填了推薦會比較準。
 
-**5. 放到 Dock、開啟每日抓取**
+**5. 選你要找的方向**（找資料／AI／軟體職缺的可以跳過）
+
+預設只推薦 data science、ML、AI engineer、data engineer、data analyst、SWE。找別的方向時，改 `profile/` 裡的兩個檔案。以硬體為例：
+
+`profile/filters.yaml`：只看硬體和嵌入式
+
+```yaml
+only_roles: [hardware, embedded]
+```
+
+`profile/sources.yaml`：LinkedIn 的搜尋關鍵字
+
+```yaml
+queries:
+  - hardware engineer new grad
+  - electrical engineer new grad
+  - embedded software engineer new grad
+```
+
+其他方向、多抓哪些公司，見[補充 B](#b-調整推薦條件)。
+
+**6. 放到 Dock、開啟每日抓取**
 
 ```bash
 uv run job-radar install-app
 uv run job-radar install-schedule
 ```
 
-**6. 打開來用**
+**7. 打開來用**
 
 點 Dock 上的 **Job Radar**。第一次開會先抓一次職缺，大約 2–4 分鐘。
 
-到這裡就設定好了。想調整推薦條件，或讓助手幫你寫開放題的建議答案，請看下面的補充說明。
+到這裡就設定好了。想再調整推薦條件，或讓助手幫你寫開放題的建議答案，請看下面的補充說明。
 
 ---
 
@@ -101,7 +122,32 @@ answers:
 
 共用的預設在 `config/` 資料夾，那是大家共用、放在 git 裡的檔案，**不要改**。你個人的設定寫在 `profile/` 裡同名的三個檔案，**只寫跟預設不一樣的部分**，其他照預設。這樣 `git pull` 更新時永遠不會衝突。
 
-- **`profile/filters.yaml`**：要找的層級、職務、地點、sponsorship。預設是以 New Grad / Entry Level 為主、實習只看 co-op / off-cycle、要求超過 2 年經驗的排除、JD 寫明不提供 sponsorship 的排除、地點限美國。
+- **`profile/filters.yaml`**：要找的職務、層級、地點、sponsorship。預設是資料／AI／軟體職務、以 New Grad / Entry Level 為主、實習只看 co-op / off-cycle、要求超過 2 年經驗的排除、JD 寫明不提供 sponsorship 的排除、地點限美國。
+
+  **職務**：職稱符合某個「職務類別」的才會推薦。內建的類別：
+
+  | id | 推薦頁顯示 | 預設 |
+  |---|---|---|
+  | `mle` | MLE | 開 |
+  | `ai_engineer` | AI Engineer | 開 |
+  | `ds` | Data Science | 開 |
+  | `de` | Data Eng | 開 |
+  | `da` | Analyst | 開 |
+  | `swe` | SWE | 開 |
+  | `hardware` | Hardware（electrical、ASIC、FPGA、RTL、verification、analog、PCB…） | 關 |
+  | `embedded` | Embedded（embedded、firmware） | 關 |
+
+  用 `only_roles` 指定只看哪幾類，沒列到的都不看。內建沒有的方向可以自己加一類，職稱符合 `titles` 任一條就算（regex、不分大小寫），記得也加進 `only_roles`：
+
+  ```yaml
+  only_roles: [hardware, embedded, mech]
+  roles:
+    - {id: mech, name: Mechanical, titles: ['mechanical', 'mechatronics']}
+  ```
+
+  每一類的關鍵字定義在 `config/filters.yaml` 的 `roles`。覺得有職缺被漏掉，可以在自己的檔案裡補（同一個 id 會蓋過共用的，`titles` 要列出全部）。
+
+  **其他常改的設定**：
 
   ```yaml
   levels:
@@ -113,8 +159,6 @@ answers:
     - {id: da, enabled: false}      # 不看 data analyst
   ```
 
-  職務類別有 `ds`、`mle`、`ai_engineer`、`swe`、`de`（data engineer）、`da`（data analyst），定義在 `config/filters.yaml`。
-
 - **`profile/companies.yaml`**：要多抓或不抓的公司。推薦頁上方「找到的公司」按 **＋ 加入** 也會寫進這裡。
 
   ```yaml
@@ -125,7 +169,21 @@ answers:
 
   `token` 是職缺板網址裡的代號，例如 `job-boards.greenhouse.io/stripe`、`jobs.lever.co/xxx`、`jobs.ashbyhq.com/xxx`。加完執行 `uv run job-radar check-companies` 確認代號正確。
 
-- **`profile/sources.yaml`**：LinkedIn / Jobright 的搜尋關鍵字、要不要用某個網站、Simplify 要讀哪些清單。
+  共用清單大多是 AI／軟體公司。找硬體的話，可以先加這幾家（都驗證過，New Grad 硬體職缺多）：
+
+  ```yaml
+  companies:
+    - {name: "SpaceX", platform: greenhouse, token: spacex}
+    - {name: "Anduril", platform: greenhouse, token: andurilindustries}
+    - {name: "Rocket Lab", platform: greenhouse, token: rocketlab}
+    - {name: "Astranis", platform: greenhouse, token: astranis}
+    - {name: "Astera Labs", platform: greenhouse, token: asteralabs}
+    - {name: "Shield AI", platform: lever, token: shieldai}
+  ```
+
+  NVIDIA、Apple、AMD、Intel、Qualcomm 這類大公司用 Workday 或自己的系統，沒辦法加進來。它們的職缺會從 Simplify 和 LinkedIn 進來，列在「需要自己開啟」。
+
+- **`profile/sources.yaml`**：LinkedIn / Jobright 的搜尋關鍵字、要不要用某個網站、Simplify 要讀哪些清單。預設的關鍵字是資料／AI 職缺，方向不同就一定要改。
 
   ```yaml
   queries:                          # 整個取代預設的關鍵字
@@ -135,7 +193,7 @@ answers:
     enabled: false                  # 不用 Jobright
   ```
 
-改完不用重開助手：`filters.yaml` 下次打開推薦頁就生效；`companies.yaml`、`sources.yaml` 在下次抓取時生效。
+改完不用重開助手：`filters.yaml` 下次打開推薦頁就生效，已經抓到的職缺會照新設定重新篩選；`companies.yaml`、`sources.yaml` 在下次抓取時生效，想馬上看到就按 **重新抓取**。
 
 ### C. 職缺從哪裡來、哪些能自動填
 
@@ -201,6 +259,7 @@ git pull && uv sync
 - **遇到 CAPTCHA 或「確認你是真人」**：助手會停下，交給你處理。
 - **不小心關掉填好的分頁**：「我的申請」會標「分頁已關」，按 **恢復申請頁** 會重新打開並再填一次。直接在頁面上打的字救不回來。
 - **點 Dock 圖示沒反應**：看 `data/logs/ui.log`。如果搬動過專案資料夾，要重跑 `uv run job-radar install-app`。
+- **推薦的都不是我要的方向**（例如找硬體，卻全是軟體職缺）：預設只看資料／AI／軟體。照安裝第 5 步在 `profile/filters.yaml` 寫 `only_roles`、在 `profile/sources.yaml` 改關鍵字，再按 **重新抓取**。
 - **推薦太少或太多**：用 `uv run job-radar radar --excluded` 看每個職缺被排除的原因，再照[補充 B](#b-調整推薦條件) 調整。
 
 ### H. 常用指令

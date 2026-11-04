@@ -3,6 +3,7 @@ preference and level. Every exclusion keeps its reason so the page can show why.
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -11,8 +12,10 @@ from pathlib import Path
 import yaml
 
 from job_radar.profile import Profile, resume_text
-from job_radar.radar.models import ATS_PLATFORMS, Filters, Skill
+from job_radar.radar.models import ATS_PLATFORMS, Filters, RoleFamily, Skill
 from job_radar.radar.resolve import ats_job_id
+
+log = logging.getLogger(__name__)
 
 LEVEL_NAMES = {"intern": "實習", "new_grad": "新鮮人"}
 # Seniority labels from job sites; a label mapped to None is excluded.
@@ -58,6 +61,18 @@ class Match:
     manual: bool = False  # a job-site posting with no fillable form: open it yourself
 
 
+def active_roles(filters: Filters) -> list[RoleFamily]:
+    """The role families jobs are matched against: those named in `only_roles` (whatever their
+    `enabled`), else every enabled one. A friend looking for hardware jobs only writes
+    `only_roles: [hardware, embedded]` instead of switching each software family off."""
+    if not filters.only_roles:
+        return [r for r in filters.roles if r.enabled]
+    known = {r.id for r in filters.roles}
+    for unknown in [i for i in filters.only_roles if i not in known]:
+        log.warning("only_roles 裡的「%s」不是 filters.yaml 的職務類別 id", unknown)
+    return [r for r in filters.roles if r.id in filters.only_roles]
+
+
 def _any(patterns: list[str]) -> re.Pattern | None:
     return re.compile("|".join(f"(?:{p})" for p in patterns), re.I) if patterns else None
 
@@ -65,7 +80,7 @@ def _any(patterns: list[str]) -> re.Pattern | None:
 class Matcher:
     def __init__(self, filters: Filters, skills: list[Skill], my_skills: set[str]) -> None:
         self.f = filters
-        self.roles = [(r, _any(r.titles)) for r in filters.roles if r.enabled]
+        self.roles = [(r, _any(r.titles)) for r in active_roles(filters)]
         self.exclude_title = _any(filters.exclude_titles)
         self.level_exclude = _any(filters.levels.exclude)
         self.level_boost = {name: _any(pats) for name, pats in filters.levels.boost.items()}

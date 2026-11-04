@@ -250,6 +250,7 @@ def create_app(
             "new_recommended": sum(m.is_new for m in picked),
             "new_days": NEW_DAYS,
             "found_companies": await run_in_threadpool(radar.found_companies),
+            "roles": await run_in_threadpool(radar.roles),
         }
 
     @app.post("/api/radar/fetch", dependencies=api)

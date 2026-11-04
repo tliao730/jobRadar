@@ -199,6 +199,25 @@ def job(title, location="San Francisco, CA", description="Python and SQL.", **ex
     }
 
 
+def test_only_roles_picks_another_direction_without_switching_each_family_off(matcher):
+    # A friend looking for hardware writes only_roles; the shared software families stay put.
+    radar = load_radar_config(ROOT_CONFIG)
+    hardware = radar.filters.model_copy(update={"only_roles": ["hardware", "embedded"]})
+    theirs = Matcher(hardware, radar.skills, {"Verilog/SystemVerilog", "FPGA"})
+    asic = job("ASIC Design Engineer, New Grad", description="RTL in SystemVerilog, FPGA, UVM.")
+    firmware = job("Embedded Software Engineer, New Grad", description="Embedded C, RTOS.")
+    software = job("Software Engineer, New Grad")
+
+    found = theirs.evaluate(asic)
+    assert found.role == "hardware" and not found.excluded
+    assert {"Verilog/SystemVerilog", "FPGA"} <= set(found.matched_skills)
+    assert theirs.evaluate(firmware).role == "embedded"
+    assert theirs.evaluate(software).excluded == "不是目標職務類別"
+    # Mine are unchanged: hardware is off by default and embedded software is SWE.
+    assert matcher.evaluate(asic).excluded == "不是目標職務類別"
+    assert matcher.evaluate(firmware).role == "swe"
+
+
 @pytest.mark.parametrize(
     ("title", "location", "description", "reason"),
     [

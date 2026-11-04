@@ -55,6 +55,7 @@ class Posting(BaseModel):
 
 class RoleFamily(BaseModel):
     id: str
+    name: str = ""  # shown on the radar page; the id when empty
     weight: float = 1.0
     titles: list[str]
     enabled: bool = True
@@ -87,6 +88,7 @@ class Weights(BaseModel):
 
 class Filters(BaseModel):
     roles: list[RoleFamily] = Field(default_factory=list)
+    only_roles: list[str] = Field(default_factory=list)  # role ids to use; [] = every enabled one
     exclude_titles: list[str] = Field(default_factory=list)
     levels: Levels = Field(default_factory=Levels)
     locations: Locations = Field(default_factory=Locations)

@@ -1,6 +1,19 @@
 # 雷達篩選與評分的個人設定：只寫跟 config/filters.yaml（共用設定）不一樣的部分，其他照共用的。
 # 寫了的設定蓋過共用的；清單整個取代，只有 roles 依 id 合併（只寫要改的欄位）。
-# 例如（把 # 拿掉再改）：
+#
+# 共用設定找的是資料／AI／軟體職缺（mle、ai_engineer、ds、de、da、swe）。方向不一樣的話，
+# 用 only_roles 指定要看哪幾類，沒列到的都不看。例如找硬體（把 # 拿掉再改）：
+#
+# only_roles: [hardware, embedded]
+#
+# 共用設定裡沒有的類別可以自己加，職稱符合 titles 任一條（regex，不分大小寫）就算，
+# 記得也加進 only_roles，例如：
+#
+# roles:
+#   - {id: mech, name: Mechanical, titles: ['mechanical', 'mechatronics']}
+# only_roles: [hardware, embedded, mech]
+#
+# 其他常改的設定：
 #
 # levels:
 #   want: [intern, new_grad]          # 也想看實習

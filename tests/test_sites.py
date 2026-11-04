@@ -422,6 +422,11 @@ def test_simplify_links_are_matched_by_url_and_never_guessed(
     assert "sponsorship" in found["simplify:s-2"].excluded
     assert found["simplify:s-3"].manual  # Workday: open it yourself
 
+    names = {r["id"]: r["name"] for r in service.roles()}
+    assert names["ds"] == "Data Science" and "hardware" not in names  # off unless asked for
+    (profile_dir / "filters.yaml").write_text("only_roles: [hardware]\n")
+    assert service.roles() == [{"id": "hardware", "name": "Hardware"}]
+
     # The list is complete: a listing gone from it is closed on the next fetch.
     lists.mock(return_value=httpx.Response(200, json=listings()[:2]))
     with httpx.Client() as client:

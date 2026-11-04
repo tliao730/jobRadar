@@ -350,7 +350,8 @@ function syncFilter() {
 
 const LEVEL = { intern: 'Co-op / 實習', new_grad: '新鮮人' };
 const SITE = { linkedin: 'LinkedIn', jobright: 'Jobright', simplify: 'Simplify' };
-const ROLE = { ds: 'Data Science', mle: 'MLE', ai_engineer: 'AI Engineer', de: 'Data Eng', da: 'Analyst', swe: 'SWE' };
+// Role families and their names come from filters.yaml (each person can add their own).
+const roleName = (id) => ((ui.radar && ui.radar.roles) || []).find((r) => r.id === id)?.name || id;
 
 async function loadRadar() {
   const wasFetching = Boolean(ui.radar && ui.radar.fetching);
@@ -436,7 +437,7 @@ function radarFilters(all) {
   }, label, h('span', { class: 'chip-count', text: String(n) }));
   return h('div', { class: 'filters' },
     chip('all', '全部', all.length),
-    ...Object.keys(ROLE).filter((role) => counts[role]).map((role) => chip(role, ROLE[role], counts[role])),
+    ...ui.radar.roles.filter((r) => counts[r.id]).map((r) => chip(r.id, r.name, counts[r.id])),
     fresh ? h('button', {
       class: `chip new${ui.onlyNew ? ' active' : ''}`,
       onclick: () => { ui.onlyNew = !ui.onlyNew; renderRadar(); },
@@ -483,7 +484,7 @@ function radarRow(m) {
   const picked = ui.picked.has(m.id);
   const site = SITE[m.platform] || m.platform;
   const meta = [
-    locationText(m.location, m.other_locations.length), ROLE[m.role], LEVEL[m.level],
+    locationText(m.location, m.other_locations.length), m.role ? roleName(m.role) : '', LEVEL[m.level],
     m.posted_at ? `${formatDate(m.posted_at)} 發布` : '',
   ].filter(Boolean);
   const missing = m.missing_skills.slice(0, 4);

@@ -156,7 +156,7 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 
 - `fetchers/`：Greenhouse、Lever、Ashby，各平台一個執行緒、同一平台請求間隔 1 秒；68 家約 75 秒、約 1.4 萬個職缺。
 - `store.py`：`data/jobs.duckdb` 的 `jobs`、`fetch_results`、`runs`、`dismissed`（「不感興趣」）。每次操作開短連線、被鎖住時重試，讓排程抓取和開著的助手可以共用；同一個程式裡的執行緒輪流開（DuckDB 在一個連線關閉的同時又開新連線會報 "already attached"，2026-10-25 在介面觸發的抓取中發生過）。下架、suspect、baseline 規則同第 4 節。
-- `match.py`：不用 LLM 的規則評分。先用職稱與地點篩（便宜），通過的才讀 JD：排除 sponsorship 寫明不提供、發布超過 60 天。分數 = 加權（技能重疊（平滑過的比例）、職務偏好、層級（想找 intern / new grad，沒寫層級的分數低））。規則都在 `config/filters.yaml`（加上 `profile/filters.yaml` 的個人設定）、`config/skills.yaml`；我的技能 = highlights + 履歷 + `profile/skills.yaml` 對到的詞彙。
+- `match.py`：不用 LLM 的規則評分。先用職稱與地點篩（便宜），通過的才讀 JD：排除 sponsorship 寫明不提供、發布超過 60 天。分數 = 加權（技能重疊（平滑過的比例）、職務偏好、層級（想找 intern / new grad，沒寫層級的分數低））。規則都在 `config/filters.yaml`（加上 `profile/filters.yaml` 的個人設定）、`config/skills.yaml`；職務類別 `roles` 有 `name`（推薦頁的標籤，由 `/api/radar` 的 `roles` 傳給頁面）；內建的 `hardware`、`embedded` 預設關閉，別的方向用 `only_roles: [...]` 只看指定的類別（`match.active_roles`，不用一類一類關；2026-11-03 朋友找硬體，第一次抓全是軟體職缺）。技能詞彙也有硬體／嵌入式（Verilog、FPGA、PCB…）；我的技能 = highlights + 履歷 + `profile/skills.yaml` 對到的詞彙。
 - `service.py`：結果依抓取批次與設定、`highlights.yaml`、`profile/skills.yaml`、履歷 PDF 的修改時間快取（重算一次約 4 秒；只看技能來源的檔案，記住答案、改 `applicant.yaml` 不會讓快取失效）。助手啟動時和每次抓取完就在背景先算好，打開推薦頁不用等；同時間只算一次。同公司同職稱只留分數最高的地點。
 - 排程：`install-schedule` 寫 `~/Library/LaunchAgents/local.job-radar.fetch.plist`，紀錄在 `data/logs/fetch.log`。launchd 不會補跑 Mac 關機時錯過的 08:30（10/29、10/30 就這樣漏掉），所以排程跑 `fetch --if-stale` 並加 `RunAtLoad`：08:30、登入時、打開助手時，只要「最近一個排程時間點（今天 08:30，還沒到就算昨天的）之後還沒抓過」就抓（`RadarService.stale`；時間從已安裝的 plist 讀，`--at` 改過也照著走）。原本用「上次抓取超過 20 小時」，11/02 因為前一天下午手動抓過，08:30 被判成不用抓。
 - 「新職缺」＝最近 3 天第一次出現（`match.NEW_DAYS`；職缺板第一次被抓到的不算）。推薦頁顯示近 3 天新出現的推薦數，抓完跳出這次新增幾個、哪些來源失敗；以前只顯示「最後一次抓取」的新增數，連按兩次就變 0，看起來像壞掉。
@@ -328,6 +328,7 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 - [x] `radar/fetchers/base.py` 與 Greenhouse、Lever、Ashby fetcher；68 家公司
 - [x] LinkedIn、Jobright 搜尋，對到 ATS 職缺、自動找新公司的職缺板
 - [x] Simplify 的 GitHub 職缺清單（New Grad，可加實習）；README 給朋友的安裝與使用說明
+- [x] 其他方向（例如硬體）：`only_roles`、內建 hardware / embedded 類別與硬體技能、職務標籤由設定決定
 - [ ] Indeed、Glassdoor（Glassdoor 試過，對到 ATS 的比例太低，先不做）
 - [x] 正規化、upsert、migration；fetch_results、runs、下架、suspect、baseline（跨來源去重等有第二種來源再做）
 - [x] 職務類別 prefilter；`fetch`、`check-companies`
@@ -380,6 +381,7 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 | 2026-11-01 | 助手不提供作答框：沒填到的題目只列出來，我到申請頁自己填；② 之後直接進入檢查並送出 |
 | 2026-11-02 | 分享給朋友（都用 Mac、會用終端機）：clone 私人 repo 在自己的 Mac 跑，不部署（助手要控制本機的 Chrome）；雷達的個人設定放 `profile/` 同名檔 |
 | 2026-11-02 | 加 Simplify 的 GitHub 清單當來源；README 寫給朋友的安裝與使用說明（規格仍只在 CLAUDE.md） |
+| 2026-11-03 | 共用預設維持資料／AI／軟體；其他方向在 `profile/filters.yaml` 用 `only_roles`，hardware / embedded 內建但預設關閉 |
 
 ## 待決定事項
 

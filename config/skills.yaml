@@ -51,3 +51,20 @@ skills:
   - {name: MLOps, match: 'mlops|model (serving|deployment)|mlflow'}
   - {name: Benchmarking/evaluation, match: 'benchmark|evaluation'}
   - {name: Git, match: '\bgit\b|github'}
+  # 硬體／嵌入式
+  - {name: Verilog/SystemVerilog, match: '\b(system ?)?verilog\b'}
+  - {name: VHDL, match: '\bvhdl\b'}
+  - {name: UVM, match: '\buvm\b'}
+  - {name: FPGA, match: '\bfpgas?\b'}
+  - {name: ASIC, match: '\basics?\b'}
+  - {name: RTL design, match: '\brtl\b'}
+  - {name: Cadence/Synopsys, match: '\bcadence\b|\bsynopsys\b|\bvirtuoso\b'}
+  - {name: SPICE, match: '\b(h|ng|lt)?spice\b'}
+  - {name: PCB design, match: '\bpcbs?\b|\baltium\b|\borcad\b|\bkicad\b|\ballegro\b'}
+  - {name: MATLAB/Simulink, match: '\bmatlab\b|\bsimulink\b'}
+  - {name: LabVIEW, match: '\blabview\b'}
+  - {name: C, match: '\bembedded c\b|\bc programming\b|\bc/c\+\+|\bc, c\+\+|\bansi c\b'}
+  - {name: RTOS, match: '\brtos\b|freertos|\bzephyr\b'}
+  - {name: Microcontrollers, match: 'microcontroller|\bmcus?\b|\bstm32\b|\barm cortex'}
+  - {name: Lab equipment, match: 'oscilloscope|logic analyzer|spectrum analyzer'}
+  - {name: Static timing analysis, match: 'static timing|\bsta\b|timing closure'}
