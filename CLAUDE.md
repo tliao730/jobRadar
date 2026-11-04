@@ -1,9 +1,9 @@
 # CLAUDE.md — Job Radar
 
-私人求職工具，不公開（私人 repo，只分享給朋友 clone 回去在自己的 Mac 用）。這份檔案是唯一的專案文件：規則、規格與進度都在這裡；設計變更時更新對應章節，任務完成時勾選「三、進度」。
+私人求職工具，不公開（私人 repo，只分享給朋友 clone 回去在自己的 Mac 用）。這份檔案是唯一的專案文件：規則、規格與進度都在這裡；設計變更時更新對應章節，任務完成時勾選「三、進度」。`README.md` 是給使用者（朋友）的安裝與使用說明：安裝步驟、操作方式、設定檔或指令有變時一起更新。
 
 - **申請助手**（已實作）：Dock 上的 Job Radar 開啟一個程式控制的 Chrome，裡面有主頁（職缺清單）與申請頁旁的側邊欄。自動填基本資料、經歷與答案庫，沒填到的題目列成清單（有金鑰時附 Claude 建議答案），我直接到申請頁補上；送出由我手動完成。
-- **職缺雷達**（部分實作）：每天 08:30 從 ATS 公開 API（68 家公司）抓職缺，並搜尋 LinkedIn、Jobright（不登入）；網站上的職缺對到公司的 ATS 就能自動填。用規則評分（以 new grad / entry level 為主），在主頁「推薦職缺」勾選後一鍵加入、開啟申請頁並填好基本資料。Indeed / Glassdoor、LLM 抽取、每日摘要與每週趨勢仍在規劃。
+- **職缺雷達**（部分實作）：每天 08:30 從 ATS 公開 API（68 家公司）抓職缺，讀 Simplify 在 GitHub 的 New Grad 清單，並搜尋 LinkedIn、Jobright（不登入）；網站上的職缺對到公司的 ATS 就能自動填。用規則評分（以 new grad / entry level 為主），在主頁「推薦職缺」勾選後一鍵加入、開啟申請頁並填好基本資料。Indeed / Glassdoor、LLM 抽取、每日摘要與每週趨勢仍在規劃。
 
 ## 指令
 
@@ -23,14 +23,14 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 
 任務完成的標準：`uv run ruff check . && uv run ruff format . && uv run pytest` 全部通過。
 
-第一次使用（朋友也照這個步驟；需要 macOS、[uv](https://docs.astral.sh/uv/)、Google Chrome）：`git clone` → `uv sync` → `init-profile` → 填 `profile/applicant.yaml` → 履歷 PDF 放進 `profile/resumes/` → 在 `profile/highlights.yaml` 寫經歷素材 → 要找的層級、職務、公司跟共用設定不同時，改 `profile/` 的 `filters.yaml`、`sources.yaml`、`companies.yaml` → `install-app` → `install-schedule` → `.env` 設 `ANTHROPIC_API_KEY`（不設也能用：只填答案庫，開放題自己寫）。更新：`git pull && uv sync`，下次打開助手就是新版。
+第一次使用（朋友照 README 的步驟；需要 macOS、[uv](https://docs.astral.sh/uv/)、Google Chrome）：`git clone` → `uv sync` → `init-profile` → 填 `profile/applicant.yaml` → 履歷 PDF 放進 `profile/resumes/` → 在 `profile/highlights.yaml` 寫經歷素材 → 要找的層級、職務、公司跟共用設定不同時，改 `profile/` 的 `filters.yaml`、`sources.yaml`、`companies.yaml` → `install-app` → `install-schedule` → `.env` 設 `ANTHROPIC_API_KEY`（不設也能用：只填答案庫，開放題自己寫）。更新：`git pull && uv sync`，下次打開助手就是新版。
 
 ## 硬性規則
 
 - 申請表單的送出永遠由我本人按。頁面操作只透過 `prefill/safe_page.py` 的 `SafePage`；其他程式不 click、不按鍵、不 submit（`tests/test_safety.py` 會檢查）。
 - 遇到 CAPTCHA、登入要求或 bot 偵測就停下，交給我處理。
 - 申請素材只重組、改寫 `profile/` 裡的事實（applicant.yaml、highlights.yaml、履歷）；素材庫沒有的專案、技能、數字列為缺口。
-- 職缺來源是 ATS 公開 API，以及 LinkedIn、Indeed、Glassdoor、Jobright 爬取（私人使用，我已接受服務條款的風險，不遵守 robots.txt）。自動爬取不登入我的個人帳號（被封號會影響求職）；遇到 429、要求登入或驗證頁就停止該來源並回報。
+- 職缺來源是 ATS 公開 API、Simplify 在 GitHub 的公開清單，以及 LinkedIn、Indeed、Glassdoor、Jobright 爬取（私人使用，我已接受服務條款的風險，不遵守 robots.txt）。自動爬取不登入我的個人帳號（被封號會影響求職）；遇到 429、要求登入或驗證頁就停止該來源並回報。
 - pytest 完全離線：HTTP 用 `tests/fixtures/` 加 respx，瀏覽器測試開本地 HTML，LLM 用假實作。
 - 密鑰只放 `.env`（本機）或 GitHub Secrets（CI）。`profile/`、`data/`、`.env` 列在 `.gitignore`。這個 Claude 帳號屬於實驗室：本專案的 API 呼叫只用我自己的金鑰（`.env`），`.env` 的 `ANTHROPIC_*` 會蓋過 shell 裡的同名變數。
 - 資料表變更寫成新的 migration（例如 `apply/store.py` 的 `MIGRATIONS` 只能往後加），讓既有資料庫原地升級。
@@ -161,6 +161,7 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 - 排程：`install-schedule` 寫 `~/Library/LaunchAgents/local.job-radar.fetch.plist`，紀錄在 `data/logs/fetch.log`。launchd 不會補跑 Mac 關機時錯過的 08:30（10/29、10/30 就這樣漏掉），所以排程跑 `fetch --if-stale` 並加 `RunAtLoad`：08:30、登入時、打開助手時，只要「最近一個排程時間點（今天 08:30，還沒到就算昨天的）之後還沒抓過」就抓（`RadarService.stale`；時間從已安裝的 plist 讀，`--at` 改過也照著走）。原本用「上次抓取超過 20 小時」，11/02 因為前一天下午手動抓過，08:30 被判成不用抓。
 - 「新職缺」＝最近 3 天第一次出現（`match.NEW_DAYS`；職缺板第一次被抓到的不算）。推薦頁顯示近 3 天新出現的推薦數，抓完跳出這次新增幾個、哪些來源失敗；以前只顯示「最後一次抓取」的新增數，連按兩次就變 0，看起來像壞掉。
 - `sites/`：LinkedIn（訪客職缺搜尋，只抓搜尋卡片；詳細頁兩三個請求就 429，而且不登入看不到申請連結）與 Jobright（不登入的搜尋頁，每個關鍵字前 20 筆，`__NEXT_DATA__`；2026-11 起第一個請求就導到 `/_jr/security/challenge` 真人驗證頁，依規則停下、10/24 之後沒抓到任何 Jobright 職缺）。關鍵字、間隔在 `config/sources.yaml`；遇到 429、登入頁、非結果頁就停止該網站，已抓到的保留。網站職缺不會因為這次沒出現就下架，14 天沒再看到才算下架。
+- Simplify（`sites/simplify.py`）：讀 `SimplifyJobs/New-Grad-Positions`（可在 `sources.yaml` 的 `simplify.repos` 加實習 repo）的 `.github/scripts/listings.json`，一次下載整份、不用關鍵字；只收 `active` 且 `is_visible` 的。連結直接是公司申請頁：Greenhouse / Lever / Ashby 的直接可自動填（`resolve.ats_job_id`），是已追蹤職缺板上的職缺就用網址對到那筆；Workday 等列在「需要自己開啟」，也不拿公司名去猜職缺板（約 3,000 家，會打出幾千個請求）。清單是完整的，沒出現就立刻下架（`SearchResult.complete`）。沒有 JD：分數只看職稱與層級（New Grad repo 標 New Grad），sponsorship 只在 Simplify 有寫時（Does Not Offer Sponsorship 等）才擋得到。2026-11-02 第一次抓：3,083 筆、77 筆能自動填且通過篩選、24 筆與既有 ATS 職缺重複。
 - `resolve.py`：網站職缺用（正規化公司名、職稱相似度 ≥ 0.6）對到 ATS 職缺，`jobs.ats_id` 記下對應；推薦頁只顯示 ATS 那筆並標「也在 LinkedIn / Jobright」。公司不在清單裡時，用完整公司名猜 Greenhouse / Lever / Ashby 代號（不用第一個字，否則 "applied"、"new" 會猜到別家），職缺板上要有職稱對得上的職缺、Greenhouse 的公司名也要對得上才算找到；結果快取在 `company_boards` 30 天。找到的公司列在推薦頁上方，按「加入」寫進自己的 `profile/companies.yaml`（共用清單 `config/companies.yaml` 不動）。對不到的網站職缺列在「需要自己開啟」，加入後只開原網頁、不自動按 ②。
 - 層級：以 new grad / entry level 為主（`levels.want`）；實習只收 co-op / off-cycle（職稱有 co-op、off-cycle 或 fall / spring / winter，或 JD 寫 co-op；JD 裡的季節常是在講學期，不算）；JD 要求超過 `max_years`（2）年經驗的排除；網站標的層級（Entry Level、New Grad、Senior Level…）也會用來判斷。
 - 2026-10-24 試算：LinkedIn / Jobright 約兩成職缺對得到 ATS；其餘多是用 Workday 或自家系統的大公司。Glassdoor 直接請求被 Cloudflare 擋，JobSpy 走內部 API 抓得到清單但沒有申請連結，樣本 30 筆對到 ATS 0 筆，所以先不做。
@@ -326,6 +327,7 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 
 - [x] `radar/fetchers/base.py` 與 Greenhouse、Lever、Ashby fetcher；68 家公司
 - [x] LinkedIn、Jobright 搜尋，對到 ATS 職缺、自動找新公司的職缺板
+- [x] Simplify 的 GitHub 職缺清單（New Grad，可加實習）；README 給朋友的安裝與使用說明
 - [ ] Indeed、Glassdoor（Glassdoor 試過，對到 ATS 的比例太低，先不做）
 - [x] 正規化、upsert、migration；fetch_results、runs、下架、suspect、baseline（跨來源去重等有第二種來源再做）
 - [x] 職務類別 prefilter；`fetch`、`check-companies`
@@ -377,6 +379,7 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 | 2026-10-25 | 表單答案：政府官員／親屬在政府任職一律 No、Hispanic/Latino 一律 No（寫在 `applicant.yaml`）；科系沒有 Data Science 就選 Computer Science |
 | 2026-11-01 | 助手不提供作答框：沒填到的題目只列出來，我到申請頁自己填；② 之後直接進入檢查並送出 |
 | 2026-11-02 | 分享給朋友（都用 Mac、會用終端機）：clone 私人 repo 在自己的 Mac 跑，不部署（助手要控制本機的 Chrome）；雷達的個人設定放 `profile/` 同名檔 |
+| 2026-11-02 | 加 Simplify 的 GitHub 清單當來源；README 寫給朋友的安裝與使用說明（規格仍只在 CLAUDE.md） |
 
 ## 待決定事項
 

@@ -5,7 +5,7 @@ description: Change what the job radar fetches and recommends. Use when adding o
 
 # Radar configuration
 
-Shared defaults (in git, everyone gets them on `git pull`) live in `config/companies.yaml`, `config/filters.yaml`, `config/skills.yaml`, `config/sources.yaml` (LinkedIn / Jobright queries and pacing). Each person's own changes go in the same-named `profile/filters.yaml`, `profile/sources.yaml`, `profile/companies.yaml` (not in git), holding only the keys they change: `radar/models.py` `merge_settings` overrides key by key, replaces lists, merges roles by id and companies by platform + token. The user's extra skills are in `profile/skills.yaml`. Code: `src/job_radar/radar/` (`fetchers/` ATS boards, `sites/` job sites, `resolve.py` matching site postings to ATS jobs).
+Shared defaults (in git, everyone gets them on `git pull`) live in `config/companies.yaml`, `config/filters.yaml`, `config/skills.yaml`, `config/sources.yaml` (LinkedIn / Jobright queries and pacing, Simplify GitHub lists). Each person's own changes go in the same-named `profile/filters.yaml`, `profile/sources.yaml`, `profile/companies.yaml` (not in git), holding only the keys they change: `radar/models.py` `merge_settings` overrides key by key, replaces lists, merges roles by id and companies by platform + token. The user's extra skills are in `profile/skills.yaml`. Code: `src/job_radar/radar/` (`fetchers/` ATS boards, `sites/` job sites, `resolve.py` matching site postings to ATS jobs).
 
 ## Adding a company
 

@@ -35,10 +35,14 @@ class SearchResult:
     postings: list[Posting] = field(default_factory=list)
     error: str = ""  # why the search stopped early; postings found before that are kept
     requests: int = 0
+    complete: bool = False  # the whole list, not a search window: what is missing has closed
 
 
 class SiteSearch(ABC):
     platform: Platform
+    needs_queries = True  # searched by sources.queries (a list site reads everything)
+    direct_links = False  # apply links go to the company's own form: no board guessing
+    complete = False  # each run returns the whole list (see SearchResult.complete)
 
     def __init__(self, sleep: Callable[[float], None] = time.sleep) -> None:
         self.sleep = sleep
@@ -55,7 +59,7 @@ class SiteSearch(ABC):
         return getattr(sources, self.platform.value)
 
     def search(self, sources: Sources, client: httpx.Client) -> SearchResult:
-        result = SearchResult(self.platform)
+        result = SearchResult(self.platform, complete=self.complete)
         site = self.config(sources)
         seen: set[str] = set()
         exhausted: set[str] = set()  # queries whose last page came back empty

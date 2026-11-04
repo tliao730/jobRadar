@@ -1,6 +1,6 @@
-# 職缺網站搜尋（不登入）。結果會和 ATS 職缺比對：對得到就用 ATS 申請頁（能自動填），
+# 職缺網站（不登入）。結果會和 ATS 職缺比對：對得到就用 ATS 申請頁（能自動填），
 # 對不到的列成「需要自己開啟」。遇到 429、登入頁或驗證頁就停止該網站，記在抓取結果裡。
-# 這是共用設定；個人的搜尋關鍵字寫在 profile/sources.yaml。
+# 這是共用設定；個人的搜尋關鍵字、要不要用某個網站，寫在 profile/sources.yaml。
 queries:
   - AI engineer new grad
   - data scientist new grad
@@ -23,3 +23,13 @@ linkedin:
 jobright:
   enabled: true
   delay_seconds: [5, 10] # 每個關鍵字一個請求、一次 20 筆；連續太多次會被擋
+
+# Simplify 在 GitHub 公開整理的職缺清單：不用關鍵字，每個 repo 一次下載整份（不登入）。
+# 連結直接是公司的申請頁，Greenhouse / Lever / Ashby 的能自動填，其他（Workday 等）列在
+# 「需要自己開啟」。也想看實習就加上 SimplifyJobs/Summer2026-Internships（只會留下 co-op /
+# off-cycle，除非在 profile/filters.yaml 改了 levels）。
+simplify:
+  enabled: true
+  delay_seconds: [1, 2]
+  repos:
+    - SimplifyJobs/New-Grad-Positions

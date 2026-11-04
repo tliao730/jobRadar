@@ -349,7 +349,7 @@ function syncFilter() {
 // ---------- radar ----------
 
 const LEVEL = { intern: 'Co-op / 實習', new_grad: '新鮮人' };
-const SITE = { linkedin: 'LinkedIn', jobright: 'Jobright' };
+const SITE = { linkedin: 'LinkedIn', jobright: 'Jobright', simplify: 'Simplify' };
 const ROLE = { ds: 'Data Science', mle: 'MLE', ai_engineer: 'AI Engineer', de: 'Data Eng', da: 'Analyst', swe: 'SWE' };
 
 async function loadRadar() {
@@ -405,7 +405,7 @@ function renderRadar() {
 
   const parts = [head];
   if (r && !r.total) {
-    parts.push(h('div', { class: 'banner info', text: '按「重新抓取」從公司清單（config/ 與 profile/ 的 companies.yaml）與 LinkedIn、Jobright 抓職缺（約 2–4 分鐘）。' }));
+    parts.push(h('div', { class: 'banner info', text: '按「重新抓取」從公司清單（config/ 與 profile/ 的 companies.yaml）與 Simplify、LinkedIn、Jobright 抓職缺（約 2–4 分鐘）。' }));
   }
   if (r && r.total) parts.push(radarFilters([...items, ...manual]));
   if (r && r.found_companies.length) parts.push(foundCompanies(r.found_companies));
@@ -419,7 +419,7 @@ function renderRadar() {
       h('header', { class: 'list-section-head' },
         h('h2', { text: '需要自己開啟' }),
         h('span', { class: 'count', text: `${r.manual_total} 個` }),
-        h('p', { class: 'muted', text: 'LinkedIn / Jobright 上、沒找到可自動填的職缺板的公司。加入後會開原網頁，或用「找公司官網」到公司網站申請。' })),
+        h('p', { class: 'muted', text: '助手沒辦法自動填的職缺：LinkedIn / Jobright 上沒找到公司職缺板的，以及 Simplify 上用 Workday 等系統的公司。加入後會開原網頁。' })),
       h('div', { class: 'radar-list' }, ...manualShown.map(radarRow))));
   }
   parts.push(pickBar(busy));
@@ -506,7 +506,8 @@ function radarRow(m) {
       ...m.matched_skills.map((s) => h('span', { class: 'skill have', text: s })),
       ...missing.map((s) => h('span', { class: 'skill lack', title: 'JD 提到、你的資料沒有', text: s })),
       m.missing_skills.length > missing.length ? h('span', { class: 'skill more', text: `+${m.missing_skills.length - missing.length}` }) : null) : null,
-    m.manual ? h('p', { class: 'radar-note' }, `${site} 不登入看不到申請連結。加入後會開原網頁；或 `,
+    m.manual && m.platform === 'simplify' ? h('p', { class: 'radar-note', text: '這家用 Workday 等系統，助手不會自動填。加入後會開公司的申請頁。' }) : null,
+    m.manual && m.platform !== 'simplify' ? h('p', { class: 'radar-note' }, `${site} 不登入看不到申請連結。加入後會開原網頁；或 `,
       h('a', { href: careersSearch(m), target: '_blank', rel: 'noopener noreferrer', text: '找公司官網 ↗' })) : null),
   h('button', { class: 'dismiss', title: '不感興趣（不再推薦）', onclick: () => onDismiss(m.id), text: '不感興趣' }));
 }

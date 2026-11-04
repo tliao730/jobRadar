@@ -20,7 +20,7 @@ from job_radar.profile import ProfileError, load_profile
 from job_radar.radar.fetchers import FETCHERS, FetchError
 from job_radar.radar.match import Match, Matcher, my_skills
 from job_radar.radar.models import ATS_PLATFORMS, Company, RadarConfig, load_radar_config
-from job_radar.radar.resolve import Resolver
+from job_radar.radar.resolve import Resolver, ats_job_id
 from job_radar.radar.sites import SITES
 from job_radar.radar.store import BoardResult, RadarStore, RunStats, utcnow
 
@@ -71,9 +71,11 @@ class RadarService:
             radar = self.radar_config()
             companies = [c for c in radar.companies if c.enabled]
             searchers = [
-                SITES[p]
-                for p in SITES
-                if sites and radar.sources.queries and getattr(radar.sources, p.value).enabled
+                site
+                for site in SITES.values()
+                if sites
+                and site.config(radar.sources).enabled
+                and (radar.sources.queries or not site.needs_queries)
             ]
             started = utcnow()
             own_client = client is None
@@ -109,7 +111,15 @@ class RadarService:
         active = self.store.active()
         ats = [j for j in active if j["platform"] in ATS_VALUES]
         pending = [j for j in active if j["platform"] not in ATS_VALUES and not j["ats_id"]]
-        links, boards = Resolver(self.store, client).resolve(pending, ats, companies)
+        # A link to the ATS job itself needs no guessing; nor does a list of direct links
+        # (Simplify) whose company is on Workday or the like: there is no board to find.
+        ats_ids = {j["id"] for j in ats}
+        links = {j["id"]: ats_job_id(j["apply_url"]) for j in pending}
+        links = {posting: job for posting, job in links.items() if job in ats_ids}
+        direct = {site.platform.value for site in SITES.values() if site.direct_links}
+        guess = [j for j in pending if j["id"] not in links and j["platform"] not in direct]
+        found, boards = Resolver(self.store, client).resolve(guess, ats, companies)
+        links |= found
         if boards:
             self.store.record_run("discover", boards, utcnow())
         self.store.link_ats(links)

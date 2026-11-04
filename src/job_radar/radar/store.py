@@ -207,7 +207,8 @@ class RadarStore:
 
     def _record_search(self, con, stats: RunStats, result: SearchResult, now: datetime) -> None:
         """Job-site results are a moving window: keep what was found (even when the search
-        stopped early) and expire postings only after they go unseen for a while."""
+        stopped early) and expire postings only after they go unseen for a while. A complete
+        list (Simplify) closes what it no longer lists."""
         platform = result.platform.value
         previous = self._previous_count(con, platform, "")
         status = "error" if result.error else "ok"
@@ -217,6 +218,8 @@ class RadarStore:
             stats.ok += 1
         self._fetch_result(con, stats, platform, platform, "", status, result, now)
         self._upsert(con, stats, platform, "", result.postings, now, previous is None)
+        if result.complete and not result.error:
+            self._close(con, stats, platform, "", {p.id for p in result.postings}, now)
         con.execute(
             "UPDATE jobs SET is_active = FALSE, closed_at = ? WHERE platform = ? AND is_active"
             f" AND last_seen_at < ? - INTERVAL {SEARCH_EXPIRY_DAYS} DAY",

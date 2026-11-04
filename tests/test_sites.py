@@ -1,4 +1,4 @@
-"""Job-site search (LinkedIn, Jobright), matching their postings to ATS jobs, and storing them."""
+"""Job sites (LinkedIn, Jobright, Simplify), matching their postings to ATS jobs, storing them."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -6,12 +6,13 @@ import httpx
 import pytest
 import respx
 
-from job_radar.radar.models import Platform, Posting, SiteConfig, Sources
+from job_radar.radar.models import Platform, Posting, SimplifyConfig, SiteConfig, Sources
 from job_radar.radar.resolve import Resolver, company_key, slug_guesses, title_similarity
 from job_radar.radar.sites import SITES
 from job_radar.radar.sites.base import SearchResult
 from job_radar.radar.sites.jobright import SEARCH_URL as JOBRIGHT_URL
 from job_radar.radar.sites.linkedin import SEARCH_URL as LINKEDIN_URL
+from job_radar.radar.sites.simplify import LISTINGS_URL
 from job_radar.radar.store import RadarStore
 from tests.conftest import FIXTURES
 
@@ -336,3 +337,94 @@ def test_a_board_counts_only_when_it_has_the_job(tmp_path):
         links, boards = Resolver(store, client).resolve(postings, [], known=[])
     assert links == {} and boards == []
     assert store.found_boards() == []
+
+
+NEW_GRAD = LISTINGS_URL.format(repo="SimplifyJobs/New-Grad-Positions")
+INTERNSHIPS = LISTINGS_URL.format(repo="SimplifyJobs/Summer2026-Internships")
+
+
+def listings() -> list[dict]:
+    import json
+
+    return json.loads(page("simplify_listings.json"))
+
+
+@respx.mock
+def test_simplify_lists_link_straight_to_the_application_form(no_sleep):
+    respx.get(NEW_GRAD).mock(return_value=httpx.Response(200, json=listings()))
+    respx.get(INTERNSHIPS).mock(return_value=httpx.Response(200, json=listings()[:1]))
+    repos = ["SimplifyJobs/New-Grad-Positions", "SimplifyJobs/Summer2026-Internships"]
+    lists = Sources(simplify=SimplifyConfig(enabled=True, delay_seconds=(0, 0), repos=repos))
+    with httpx.Client() as client:
+        result = SITES[Platform.SIMPLIFY].search(lists, client)
+    assert not result.error and result.complete
+    # Closed (active: false) and hidden listings are left out; the same listing twice is kept once.
+    assert [p.id for p in result.postings] == ["simplify:s-1", "simplify:s-2", "simplify:s-3"]
+    first, second = result.postings[:2]
+    assert first.company == "Example Co" and first.seniority == "New Grad"
+    assert first.apply_url.startswith("https://job-boards.greenhouse.io/exampleco/jobs/1001")
+    assert first.posted_at.tzinfo is not None
+    assert second.location == "New York, NY; Remote in USA"
+    assert "Sponsorship: Does Not Offer Sponsorship" in second.description
+    assert "Sponsorship" not in first.description  # "Other" means Simplify does not know
+
+
+@respx.mock
+def test_a_missing_simplify_list_is_reported(no_sleep):
+    respx.get(NEW_GRAD).mock(return_value=httpx.Response(404, text="404: Not Found"))
+    lists = Sources(simplify=SimplifyConfig(enabled=True, delay_seconds=(0, 0)))
+    with httpx.Client() as client:
+        result = SITES[Platform.SIMPLIFY].search(lists, client)
+    assert result.postings == [] and "HTTP 404" in result.error
+
+
+@respx.mock
+def test_simplify_links_are_matched_by_url_and_never_guessed(
+    tmp_path, profile_dir, no_sleep, monkeypatch
+):
+    import json
+
+    import yaml
+
+    from job_radar.config import AppConfig, PathsConfig
+    from job_radar.radar.service import RadarService
+    from tests.test_radar import ROOT_CONFIG
+
+    monkeypatch.setattr("job_radar.radar.service.REQUEST_GAP_S", 0)
+    config = tmp_path / "config"
+    config.mkdir()
+    for name in ("filters.yaml", "skills.yaml"):
+        (config / name).write_text((ROOT_CONFIG / name).read_text())
+    company = {"name": "Example Co", "platform": "greenhouse", "token": "exampleco"}
+    (config / "companies.yaml").write_text(yaml.safe_dump({"companies": [company]}))
+    # No search keywords: a list site reads everything anyway.
+    simplify = {"enabled": True, "delay_seconds": [0, 0]}
+    (config / "sources.yaml").write_text(yaml.safe_dump({"queries": [], "simplify": simplify}))
+    respx.get("https://boards-api.greenhouse.io/v1/boards/exampleco/jobs?content=true").mock(
+        return_value=httpx.Response(
+            200, json=json.loads((FIXTURES / "radar" / "greenhouse_board.json").read_text())
+        )
+    )
+    lists = respx.get(NEW_GRAD).mock(return_value=httpx.Response(200, json=listings()))
+    guessed = respx.get(url__regex=r".*").mock(return_value=httpx.Response(404))
+    cfg = AppConfig(
+        root=tmp_path, paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d"))
+    )
+    service = RadarService(cfg)
+    with httpx.Client() as client:
+        assert service.fetch(client).ok == 2  # the board and the Simplify list
+    assert not guessed.called  # Newboard AI and Bigcorp: no board names were tried
+
+    found = {m.id: m for m in service.matches()}
+    assert "simplify:s-1" not in found  # shown as the Greenhouse job it links to
+    assert found["greenhouse:1001"].also_on == ["simplify"]
+    assert not found["simplify:s-2"].manual  # an Ashby form: fillable as is
+    assert "sponsorship" in found["simplify:s-2"].excluded
+    assert found["simplify:s-3"].manual  # Workday: open it yourself
+
+    # The list is complete: a listing gone from it is closed on the next fetch.
+    lists.mock(return_value=httpx.Response(200, json=listings()[:2]))
+    with httpx.Client() as client:
+        service.fetch(client)
+    active = {j["id"] for j in service.store.active()}
+    assert "simplify:s-3" not in active and "simplify:s-2" in active

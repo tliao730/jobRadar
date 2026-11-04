@@ -11,7 +11,8 @@ from pathlib import Path
 import yaml
 
 from job_radar.profile import Profile, resume_text
-from job_radar.radar.models import Filters, Skill
+from job_radar.radar.models import ATS_PLATFORMS, Filters, Skill
+from job_radar.radar.resolve import ats_job_id
 
 LEVEL_NAMES = {"intern": "實習", "new_grad": "新鮮人"}
 # Seniority labels from job sites; a label mapped to None is excluded.
@@ -54,7 +55,7 @@ class Match:
     excluded: str = ""  # why it is not recommended; "" when it is
     other_locations: list[str] = field(default_factory=list)  # same job posted elsewhere
     also_on: list[str] = field(default_factory=list)  # job sites listing this same ATS job
-    manual: bool = False  # a job-site posting with no matching ATS job: open it yourself
+    manual: bool = False  # a job-site posting with no fillable form: open it yourself
 
 
 def _any(patterns: list[str]) -> re.Pattern | None:
@@ -89,7 +90,7 @@ class Matcher:
             posted_at=job.get("posted_at"),
             first_seen_at=job.get("first_seen_at"),
             is_new=_recent(job, now),
-            manual=job["platform"] in ("linkedin", "jobright"),
+            manual=job["platform"] not in ATS_VALUES and not ats_job_id(job["apply_url"]),
         )
         title = m.title
         role = next((r for r, rx in self.roles if rx and rx.search(title)), None)
@@ -178,6 +179,7 @@ class Matcher:
 
 
 NEW_DAYS = 3
+ATS_VALUES = {p.value for p in ATS_PLATFORMS}
 
 
 def _recent(job: dict, now: datetime) -> bool:

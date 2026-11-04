@@ -1,4 +1,5 @@
-"""Match job-site postings (LinkedIn, Jobright) to the same job on a company's ATS board.
+"""Match job-site postings (LinkedIn, Jobright, Simplify) to the same job on a company's ATS
+board. A posting whose link is the ATS job itself (Simplify) is matched by that link.
 
 A match turns a posting the assistant cannot fill (the site hides the apply link without a
 login) into one it can. Companies whose board is unknown get their likely board tokens tried
@@ -14,6 +15,7 @@ from datetime import timedelta
 
 import httpx
 
+from job_radar.apply.intake import IntakeError, parse_job_url
 from job_radar.radar.fetchers import FETCHERS, FetchError
 from job_radar.radar.models import ATS_PLATFORMS, Company, Platform
 from job_radar.radar.store import BoardResult, RadarStore, utcnow
@@ -26,6 +28,7 @@ _SUFFIXES = {
     "inc", "llc", "ltd", "corp", "corporation", "co", "company", "the", "group", "holdings",
     "technologies", "technology", "labs", "usa", "us", "plc", "lp",
 }  # fmt: skip
+ATS_VALUES = {p.value for p in ATS_PLATFORMS}
 _TITLE_NOISE = {"the", "a", "an", "and", "of", "for", "to", "in", "at", "with", "remote", "hybrid"}
 
 
@@ -42,6 +45,16 @@ def slug_guesses(name: str) -> list[str]:
     # companies' boards.
     words = company_key(name).split()
     return list(dict.fromkeys(["".join(words), "-".join(words)])) if words else []
+
+
+def ats_job_id(url: str) -> str | None:
+    """The radar id of the Greenhouse / Lever / Ashby job a link opens ("greenhouse:123"),
+    None for any other page. Such a link is a form the assistant can fill."""
+    try:
+        job = parse_job_url(url)
+    except IntakeError:
+        return None
+    return job.job_id if job.source.value in ATS_VALUES else None
 
 
 def title_similarity(a: str, b: str) -> float:

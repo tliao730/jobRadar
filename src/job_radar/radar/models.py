@@ -19,6 +19,7 @@ class Platform(StrEnum):
     # Job sites searched without logging in; their postings link to an ATS job when one matches.
     LINKEDIN = "linkedin"
     JOBRIGHT = "jobright"
+    SIMPLIFY = "simplify"  # Simplify's lists on GitHub: links straight to the company's form
 
 
 ATS_PLATFORMS = (Platform.GREENHOUSE, Platform.LEVER, Platform.ASHBY)
@@ -105,12 +106,17 @@ class SiteConfig(BaseModel):
     delay_seconds: tuple[float, float] = (3.0, 8.0)
 
 
+class SimplifyConfig(SiteConfig):
+    repos: list[str] = Field(default_factory=lambda: ["SimplifyJobs/New-Grad-Positions"])
+
+
 class Sources(BaseModel):
     queries: list[str] = Field(default_factory=list)
     location: str = "United States"
     days: int = 7
     linkedin: SiteConfig = Field(default_factory=lambda: SiteConfig(enabled=False))
     jobright: SiteConfig = Field(default_factory=lambda: SiteConfig(enabled=False))
+    simplify: SimplifyConfig = Field(default_factory=lambda: SimplifyConfig(enabled=False))
 
 
 class RadarConfig(BaseModel):
