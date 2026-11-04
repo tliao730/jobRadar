@@ -56,8 +56,10 @@ class Posting(BaseModel):
 class RoleFamily(BaseModel):
     id: str
     name: str = ""  # shown on the radar page; the id when empty
+    group: str = ""  # software / data / hardware: only_roles can name a whole group
     weight: float = 1.0
     titles: list[str]
+    queries: list[str] = Field(default_factory=list)  # job-site searches for this family
     enabled: bool = True
 
 
@@ -88,7 +90,7 @@ class Weights(BaseModel):
 
 class Filters(BaseModel):
     roles: list[RoleFamily] = Field(default_factory=list)
-    only_roles: list[str] = Field(default_factory=list)  # role ids to use; [] = every enabled one
+    only_roles: list[str] = Field(default_factory=list)  # role ids or groups; [] = all enabled
     exclude_titles: list[str] = Field(default_factory=list)
     levels: Levels = Field(default_factory=Levels)
     locations: Locations = Field(default_factory=Locations)
@@ -113,7 +115,7 @@ class SimplifyConfig(SiteConfig):
 
 
 class Sources(BaseModel):
-    queries: list[str] = Field(default_factory=list)
+    queries: list[str] = Field(default_factory=list)  # [] = the queries of the roles in use
     location: str = "United States"
     days: int = 7
     linkedin: SiteConfig = Field(default_factory=lambda: SiteConfig(enabled=False))

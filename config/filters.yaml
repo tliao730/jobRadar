@@ -1,27 +1,88 @@
 # 職缺雷達的篩選與評分規則。比對不分大小寫，都是 regex（\b 是字邊界）。
-# 這是大家共用的預設（在 git 裡）；個人不同的部分寫在 profile/filters.yaml，只寫要改的設定。
+# 這是大家共用的預設（在 git 裡），不偏向任何人的方向；個人不同的部分寫在 profile/filters.yaml，
+# 只寫要改的設定。
 
-# 職務類別：職稱符合 titles 任一條就屬於該類別（由上而下第一個符合的為準）。
-# name 是推薦頁上顯示的名稱；weight 是偏好（0–1）；enabled: false 整類不看。
-# 只想看其中幾類（例如找硬體的人），在 profile/filters.yaml 寫 only_roles: [hardware, embedded]，
-# 沒列到的都不看，不用一類一類關掉。這裡沒有的類別也可以在 profile/filters.yaml 新增。
+# 職務類別：職稱符合 titles 任一條就屬於該類別（在你看的類別裡，由上而下第一個符合的為準）。
+#   name    推薦頁上顯示的名稱
+#   group   大類：software、data、hardware；only_roles 可以直接寫大類
+#   queries LinkedIn / Jobright 的搜尋關鍵字：只搜你看的類別（每類先搜第一個，再搜第二個）
+#   weight  偏好（0–1，預設 1）；enabled: false 整類不看
+# 預設全部都看、權重相同。只看其中幾類，在 profile/filters.yaml 寫 only_roles，例如：
+#   only_roles: [hardware]              # 硬體四類
+#   only_roles: [ds, da, ba]            # 資料分析
+#   only_roles: [software, ds]          # 軟體工程加 data science
+# 排列順序有意義：embedded、digital、analog 在 swe 前面（Embedded Software Engineer 是 embedded），
+# infra、electrical 在 swe 後面（Software Engineer, Infrastructure 是 swe；Software Engineer, Hardware 也是）。
 roles:
-  - {id: mle, name: MLE, weight: 1.0, titles: ['machine learning', '\bml\b', 'mlops', 'applied scientist', '\bai/ml\b']}
-  - {id: ai_engineer, name: AI Engineer, weight: 0.9, titles: ['\bai engineer', '\bllm\b', 'generative ai', '\bgenai\b', 'ai research']}
-  - {id: ds, name: Data Science, weight: 1.0, titles: ['data scien', 'research scientist', 'quantitative (analyst|researcher)', 'decision scien', 'statistician']}
-  - {id: de, name: Data Eng, weight: 0.7, titles: ['data engineer', 'analytics engineer', 'data platform', 'data infrastructure']}
-  - {id: da, name: Analyst, weight: 0.6, titles: ['data analyst', 'business intelligence', 'product analyst', 'analytics analyst', '\bbi (analyst|engineer)']}
-  # 硬體方向：預設不看，找硬體的人用 only_roles 打開（放在 swe 前面，Embedded Software Engineer 才會歸到 embedded）。
-  - {id: hardware, name: Hardware, weight: 1.0, enabled: false, titles: ['\bhardware\b', 'electrical', '\basic\b', '\bfpga\b', '\brtl\b', 'verification engineer', '(design|hardware|silicon|asic) verification', '(hardware|silicon|post-silicon|product) validation', 'physical design', '(?<!non[- ])\bsilicon\b', '\bsoc\b', 'analog', 'mixed[- ]signal', 'circuit', 'semiconductor', '\bpcb\b', 'board design', '\bdft\b', 'signal integrity', '\brf\b', 'photonics', '\bpower electronics\b']}
-  - {id: embedded, name: Embedded, weight: 1.0, enabled: false, titles: ['embedded', 'firmware']}
-  - {id: swe, name: SWE, weight: 0.5, titles: ['software engineer', 'software developer', 'backend', 'back-end', 'full[- ]?stack', 'member of technical staff']}
+  - id: mle
+    name: MLE
+    group: software
+    titles: ['machine learning', '\bml\b', 'mlops', 'applied scientist', '\bai/ml\b']
+    queries: [machine learning engineer new grad, machine learning engineer]
+  - id: ai_engineer
+    name: AI Engineer
+    group: software
+    titles: ['\bai engineer', '\bllm\b', 'generative ai', '\bgenai\b', 'ai research']
+    queries: [AI engineer new grad, AI engineer]
+  - id: ds
+    name: Data Science
+    group: data
+    titles: ['data scien', 'research scientist', 'quantitative (analyst|researcher)', 'decision scien', 'statistician']
+    queries: [data scientist new grad, data scientist]
+  - id: de
+    name: Data Eng
+    group: software
+    titles: ['data engineer', 'analytics engineer', 'data platform', 'data infrastructure']
+    queries: [data engineer new grad, data engineer]
+  - id: da
+    name: Data Analyst
+    group: data
+    titles: ['data analyst', 'business intelligence', 'product analyst', 'analytics analyst', '\bbi (analyst|engineer)']
+    queries: [data analyst new grad, data analyst]
+  - id: ba
+    name: Business Analyst
+    group: data
+    titles: ['business (analyst|analytics)', 'business systems analyst', 'business operations', '\bbiz ?ops\b', 'strategy (and|&) operations', '(?<!security )operations analyst', 'strategy analyst', 'business technology', 'technology analyst', '\b(strategy|technology|management|business) consultant\b']
+    queries: [business analyst new grad, business analyst]
+  - id: embedded
+    name: Embedded / Firmware
+    group: hardware
+    titles: ['embedded', 'firmware', 'device drivers?', '\bbsp\b']
+    queries: [embedded software engineer new grad, firmware engineer]
+  - id: digital
+    name: Digital / ASIC
+    group: hardware
+    titles: ['\basic\b', '\bfpga\b', '\brtl\b', '\bsoc\b', '\bvlsi\b', '\bdft\b', 'physical design', '\bdigital (ic |circuit |logic |asic )?design\b', 'logic design', 'chip design', '\b(cpu|gpu) (design|verification|architect)', '(?<!software )verification engineer', '(design|hardware|silicon|asic) verification', 'post-silicon', '(?<!non[- ])\bsilicon\b']
+    queries: [ASIC design engineer new grad, design verification engineer]
+  - id: analog
+    name: Analog / RF
+    group: hardware
+    titles: ['analog', 'mixed[- ]signal', '\brf\b', 'radio frequency', 'antenna', 'microwave', 'circuit', '\bic design\b', 'power (electronics|integrity|conversion|management)', 'signal integrity', 'photonics', '\boptic(al|s) engineer']
+    queries: [analog design engineer new grad, RF engineer]
+  - id: swe
+    name: SWE
+    group: software
+    titles: ['software engineer', 'software developer', 'software development engineer', '\bsde\b', 'backend', 'back-end', 'front[- ]?end', 'full[- ]?stack', 'member of technical staff', '\b(ios|android|mobile) (software )?(engineer|developer)']
+    queries: [software engineer new grad, software engineer]
+  - id: infra
+    name: Infra / Security
+    group: software
+    titles: ['site reliability', '\bsre\b', 'dev ?ops', '(cloud|infrastructure|platform|network|production) engineer', 'security engineer', 'cyber ?security']
+    queries: [site reliability engineer new grad, cloud engineer new grad]
+  - id: electrical
+    name: Hardware / Electrical
+    group: hardware
+    titles: ['\bhardware\b', 'electrical', '\bpcb\b', 'board (design|level)', 'avionics', 'semiconductor', 'power systems', '\bcontrols? (systems )?engineer', '(?<!software )(?<!qa )(?<!quality )\btest engineer']
+    queries: [electrical engineer new grad, hardware engineer new grad]
 
 # 職稱含這些字就不看（業務、管理職等）。
 # 最後一條：職稱寫 PhD 但沒寫 MS / Master 的（只收博士生）。
 exclude_titles: ['^(?!.*\b(ms|m\.s\.|masters?|bs|bachelor)\b).*\bph\.?d\b', '\bsales\b', 'recruit', 'account (executive|manager)', '\bdirector\b', '\bvp\b', 'vice president', '\bhead of\b', '\bmanager\b', 'counsel', 'marketing', 'customer success', 'solutions? (architect|engineer)']
 
-# 層級（看職稱，以及 LinkedIn / Jobright 標的層級）：exclude 的直接排除；boost 的加分。
-# 2027 年 5 月畢業：以 new grad / entry level 為主；實習只要 co-op 或 off-cycle（intern_requires）。
+# 層級（看職稱，以及網站標的層級）：exclude 的直接排除；boost 的加分。
+# 預設以 new grad / entry level 為主；實習只留 co-op 或 off-cycle（intern_requires）。
+# 想找暑期實習：在 profile/filters.yaml 把 want 改成 [intern]、intern_requires 和
+# intern_requires_in_jd 設成 []（README 補充 B 有範例）。
 levels:
   exclude: ['\bsenior\b', '\bsr\.?\b', '\bstaff\b', '\bprincipal\b', '\blead\b', '\bdistinguished\b', '\bII\b', '\bIII\b', '\bIV\b', '\b[3-9]\b', '\bmid[- ]level\b']
   boost:
@@ -38,16 +99,16 @@ levels:
   max_years: 2
 
 # 地點：符合 include 且不符合 exclude 才保留；列多個地點（用 ; | / • 分隔）時有一個符合就保留。
-# 地點空白的保留。
+# 地點空白的保留。州名（全名或縮寫）是美國 50 州加 DC。
 locations:
-  include: ['united states', '\busa?\b', '\bremote\b', 'new york', '\bny\b', 'san francisco', 'bay area', 'seattle', 'los angeles', 'boston', 'austin', 'chicago', 'mountain view', 'palo alto', 'menlo park', 'sunnyvale', 'san jose', 'san mateo', 'redwood city', 'oakland', 'denver', 'atlanta', 'washington', ', (ca|ny|wa|ma|tx|il|co|ga|nj|pa|or|nc|va|ut|az|fl|mn|mi|oh|md|dc)\b']
-  exclude: ['canada', 'united kingdom', '\buk\b', 'london', 'india', 'singapore', 'germany', 'ireland', 'dublin', 'japan', 'brazil', 'mexico', 'poland', 'netherlands', 'australia', 'toronto', 'remote.{0,10}(canada|uk|emea|europe|apac|latam)']
+  include: ['united states', '\busa?\b', '\bremote\b', 'new york', '\bny\b', 'san francisco', 'bay area', 'seattle', 'los angeles', 'boston', 'austin', 'chicago', 'mountain view', 'palo alto', 'menlo park', 'sunnyvale', 'san jose', 'san mateo', 'redwood city', 'oakland', 'denver', 'atlanta', 'washington', ', (al|ak|az|ar|ca|co|ct|de|dc|fl|ga|hi|id|il|in|ia|ks|ky|la|me|md|ma|mi|mn|ms|mo|mt|ne|nv|nh|nj|nm|ny|nc|nd|oh|ok|or|pa|ri|sc|sd|tn|tx|ut|vt|va|wa|wv|wi|wy)\b', '\b(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|west virginia|wisconsin|wyoming)\b']
+  exclude: ['canada', 'united kingdom', '\buk\b', '(?<!new )london(?!, (ky|oh)\b)', '\bindia\b', 'bangalore', 'bengaluru', 'hyderabad', 'pune', 'singapore', 'germany', 'stuttgart', 'munich', 'berlin', 'ireland', 'dublin(?!, (ca|oh)\b)', 'japan', 'brazil', 'argentina', 'buenos aires', '(?<!new )mexico', 'poland', 'netherlands', 'australia', 'toronto', 'remote.{0,10}(canada|uk|emea|europe|apac|latam)']
 
-# JD 寫明不提供 sponsorship 的直接排除（不需要 sponsorship 的人在 profile/filters.yaml 把
-# exclude_no_sponsorship 設成 false）。
+# JD 寫明不提供 sponsorship、或只收美國公民／U.S. person（ITAR，國防與航太常見）的直接排除。
+# 不需要 sponsorship 的人在 profile/filters.yaml 把 exclude_no_sponsorship 設成 false。
 sponsorship:
   exclude_no_sponsorship: true
-  no_sponsorship: ['(not|unable to|cannot|can.t|will not|won.t|do not|does not) (be able to )?(offer|provide|support|sponsor)[^.]{0,40}(sponsorship|visa)', 'without (the )?(need for )?(current or future )?(visa )?sponsorship', 'no (visa )?sponsorship', 'must be (a )?u\.?s\.? citizen', 'security clearance', 'citizenship is required']
+  no_sponsorship: ['(not|unable to|cannot|can.t|will not|won.t|do not|does not) (be able to )?(offer|provide|support|sponsor)[^.]{0,40}(sponsorship|visa)', 'without (the )?(need for )?(current or future )?(visa )?sponsorship', 'no (visa )?sponsorship', 'must be (a )?(\(i\) )?u\.?s\.? (citizen|person)', 'u\.?s\.? person status', 'security clearance', 'citizenship is required']
 
 # 分數 = 各項加權平均（0–100）。層級權重高，是因為沒寫層級的職缺多半要求經驗。
 weights: {skills: 0.4, role: 0.25, level: 0.35}

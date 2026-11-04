@@ -199,23 +199,90 @@ def job(title, location="San Francisco, CA", description="Python and SQL.", **ex
     }
 
 
-def test_only_roles_picks_another_direction_without_switching_each_family_off(matcher):
-    # A friend looking for hardware writes only_roles; the shared software families stay put.
+def directed(**update) -> Matcher:
     radar = load_radar_config(ROOT_CONFIG)
-    hardware = radar.filters.model_copy(update={"only_roles": ["hardware", "embedded"]})
-    theirs = Matcher(hardware, radar.skills, {"Verilog/SystemVerilog", "FPGA"})
+    return Matcher(radar.filters.model_copy(update=update), radar.skills, set())
+
+
+@pytest.mark.parametrize(
+    ("title", "role"),
+    [
+        ("Machine Learning Engineer, New Grad", "mle"),
+        ("Data Scientist, New Grad", "ds"),
+        ("Data Engineer", "de"),
+        ("Business Intelligence Analyst", "da"),
+        ("Business Analyst, New Grad", "ba"),
+        ("Software Engineer, New Grad", "swe"),
+        ("Frontend Engineer", "swe"),
+        ("Software Development Engineer I", "swe"),
+        ("Software Engineer, Infrastructure", "swe"),  # swe is listed before infra
+        ("Software Engineer, Hardware Platform", "swe"),  # and before electrical
+        ("Site Reliability Engineer", "infra"),
+        ("Embedded Software Engineer, New Grad", "embedded"),  # embedded is before swe
+        ("Firmware Engineer", "embedded"),
+        ("ASIC Design Engineer, New Grad", "digital"),
+        ("Design Verification Engineer", "digital"),
+        ("Post-Silicon Validation Engineer", "digital"),
+        ("Analog Mixed-Signal Engineer", "analog"),
+        ("RF Engineer", "analog"),
+        ("Electrical Engineer New Grad", "electrical"),
+        ("Hardware Test Engineer", "electrical"),
+        ("Software Test Engineer", ""),
+        ("Software Verification Engineer", ""),
+        ("Digital Product Designer", ""),
+        ("Applied AI New Grad - Non Silicon", ""),
+    ],
+)
+def test_role_families_cover_software_data_and_hardware(matcher, title, role):
+    # The shared defaults look at every family; the first one that matches wins.
+    assert matcher.evaluate(job(title)).role == role
+
+
+def test_only_roles_names_families_or_whole_groups():
     asic = job("ASIC Design Engineer, New Grad", description="RTL in SystemVerilog, FPGA, UVM.")
     firmware = job("Embedded Software Engineer, New Grad", description="Embedded C, RTOS.")
     software = job("Software Engineer, New Grad")
 
-    found = theirs.evaluate(asic)
-    assert found.role == "hardware" and not found.excluded
-    assert {"Verilog/SystemVerilog", "FPGA"} <= set(found.matched_skills)
-    assert theirs.evaluate(firmware).role == "embedded"
-    assert theirs.evaluate(software).excluded == "不是目標職務類別"
-    # Mine are unchanged: hardware is off by default and embedded software is SWE.
-    assert matcher.evaluate(asic).excluded == "不是目標職務類別"
-    assert matcher.evaluate(firmware).role == "swe"
+    hardware = directed(only_roles=["hardware"])
+    assert hardware.evaluate(asic).role == "digital" and not hardware.evaluate(asic).excluded
+    assert hardware.evaluate(firmware).role == "embedded"
+    assert hardware.evaluate(software).excluded == "不是目標職務類別"
+    # Without embedded among the families in use, embedded software is SWE.
+    mine = directed(only_roles=["ds", "swe"])
+    assert mine.evaluate(firmware).role == "swe"
+    assert mine.evaluate(asic).excluded == "不是目標職務類別"
+
+
+def test_a_family_switched_off_stays_off_inside_its_group():
+    radar = load_radar_config(ROOT_CONFIG)
+    roles = [r.model_copy(update={"enabled": r.id != "analog"}) for r in radar.filters.roles]
+    no_analog = Matcher(
+        radar.filters.model_copy(update={"roles": roles, "only_roles": ["hardware"]}),
+        radar.skills,
+        set(),
+    )
+    assert no_analog.evaluate(job("Analog Design Engineer")).excluded == "不是目標職務類別"
+    assert no_analog.evaluate(job("FPGA Engineer")).role == "digital"
+
+
+def test_job_sites_are_searched_for_the_families_in_use():
+    from job_radar.radar.service import search_queries
+
+    radar = load_radar_config(ROOT_CONFIG)
+    data = radar.model_copy(
+        update={"filters": radar.filters.model_copy(update={"only_roles": ["data"]})}
+    )
+    # Every family's first query before any second one: a rate limit midway still covers all.
+    assert search_queries(data) == [
+        "data scientist new grad",
+        "data analyst new grad",
+        "business analyst new grad",
+        "data scientist",
+        "data analyst",
+        "business analyst",
+    ]
+    mine = data.model_copy(update={"sources": data.sources.model_copy(update={"queries": ["x"]})})
+    assert search_queries(mine) == ["x"]  # queries in sources.yaml win
 
 
 @pytest.mark.parametrize(
@@ -230,10 +297,29 @@ def test_only_roles_picks_another_direction_without_switching_each_family_off(ma
         ("Data Scientist, New Grad", "Remote - Canada", "", "地點"),
         ("Data Scientist, New Grad", "Paris, France", "", "地點"),
         ("ML Engineer, New Grad", "Remote - US", "We are unable to sponsor visas.", "sponsorship"),
+        (
+            "Electrical Engineer New Grad",
+            "Hawthorne, CA",
+            "To conform to U.S. Government export regulations, applicant must be a (i) U.S. "
+            "citizen or national, (ii) U.S. lawful, permanent resident",
+            "sponsorship",
+        ),
+        ("FPGA Engineer", "Costa Mesa, CA", "Must be a U.S. person under ITAR.", "sponsorship"),
+        ("Data Scientist, New Grad", "Stuttgart, DE", "", "地點"),
     ],
 )
 def test_hard_filters_explain_exclusions(matcher, title, location, description, reason):
     assert reason in matcher.evaluate(job(title, location, description)).excluded
+
+
+def test_every_us_state_counts_and_export_boilerplate_does_not_exclude(matcher):
+    boilerplate = (
+        "This position may require access to information protected under U.S. export control laws."
+    )
+    us = ["Huntsville, AL", "Boise, ID", "Indianapolis, IN", "Wilmington, DE", "New London, CT"]
+    for place in [*us, "Albuquerque, New Mexico", "Dublin, CA"]:
+        assert not matcher.evaluate(job("Electrical Engineer New Grad", place)).excluded, place
+    assert not matcher.evaluate(job("Data Scientist, New Grad", description=boilerplate)).excluded
 
 
 def test_wanted_levels_rank_above_unstated_ones(matcher):

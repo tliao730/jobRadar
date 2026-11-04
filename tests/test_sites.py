@@ -393,13 +393,16 @@ def test_simplify_links_are_matched_by_url_and_never_guessed(
     monkeypatch.setattr("job_radar.radar.service.REQUEST_GAP_S", 0)
     config = tmp_path / "config"
     config.mkdir()
-    for name in ("filters.yaml", "skills.yaml"):
-        (config / name).write_text((ROOT_CONFIG / name).read_text())
+    (config / "skills.yaml").write_text((ROOT_CONFIG / "skills.yaml").read_text())
+    # No search keywords anywhere: a list site reads everything anyway.
+    filters = yaml.safe_load((ROOT_CONFIG / "filters.yaml").read_text())
+    for role in filters["roles"]:
+        role.pop("queries", None)
+    (config / "filters.yaml").write_text(yaml.safe_dump(filters, allow_unicode=True))
     company = {"name": "Example Co", "platform": "greenhouse", "token": "exampleco"}
     (config / "companies.yaml").write_text(yaml.safe_dump({"companies": [company]}))
-    # No search keywords: a list site reads everything anyway.
     simplify = {"enabled": True, "delay_seconds": [0, 0]}
-    (config / "sources.yaml").write_text(yaml.safe_dump({"queries": [], "simplify": simplify}))
+    (config / "sources.yaml").write_text(yaml.safe_dump({"simplify": simplify}))
     respx.get("https://boards-api.greenhouse.io/v1/boards/exampleco/jobs?content=true").mock(
         return_value=httpx.Response(
             200, json=json.loads((FIXTURES / "radar" / "greenhouse_board.json").read_text())
@@ -423,9 +426,9 @@ def test_simplify_links_are_matched_by_url_and_never_guessed(
     assert found["simplify:s-3"].manual  # Workday: open it yourself
 
     names = {r["id"]: r["name"] for r in service.roles()}
-    assert names["ds"] == "Data Science" and "hardware" not in names  # off unless asked for
+    assert names["ds"] == "Data Science" and names["digital"] == "Digital / ASIC"
     (profile_dir / "filters.yaml").write_text("only_roles: [hardware]\n")
-    assert service.roles() == [{"id": "hardware", "name": "Hardware"}]
+    assert [r["id"] for r in service.roles()] == ["embedded", "digital", "analog", "electrical"]
 
     # The list is complete: a listing gone from it is closed on the next fetch.
     lists.mock(return_value=httpx.Response(200, json=listings()[:2]))

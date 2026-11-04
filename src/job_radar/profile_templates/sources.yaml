@@ -1,14 +1,11 @@
 # 職缺網站（LinkedIn、Jobright、Simplify）的個人設定：只寫跟 config/sources.yaml（共用設定）不一樣的部分。
-# queries 是 LinkedIn / Jobright 的搜尋關鍵字，會整個取代共用的（共用的是資料／AI 職缺）。
-# 方向不一樣就一定要改，例如找硬體（把 # 拿掉再改）：
+#
+# LinkedIn / Jobright 的搜尋關鍵字預設跟著你在 filters.yaml 選的職務類別走（only_roles）。
+# 想自己指定就寫 queries，會整個取代，例如（把 # 拿掉再改）：
 #
 # queries:
+#   - FPGA engineer new grad
 #   - hardware engineer new grad
-#   - electrical engineer new grad
-#   - ASIC engineer
-#   - FPGA engineer
-#   - embedded software engineer new grad
-#   - firmware engineer
 #
 # 不想用某個網站（例如一直被擋的 Jobright）：
 # jobright:

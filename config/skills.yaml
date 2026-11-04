@@ -68,3 +68,24 @@ skills:
   - {name: Microcontrollers, match: 'microcontroller|\bmcus?\b|\bstm32\b|\barm cortex'}
   - {name: Lab equipment, match: 'oscilloscope|logic analyzer|spectrum analyzer'}
   - {name: Static timing analysis, match: 'static timing|\bsta\b|timing closure'}
+  # 軟體工程
+  - {name: React, match: '(?-i:\bReact\b)|\breact(js|\.js)\b'}
+  - {name: Node.js, match: '\bnode(\.js|js)\b'}
+  - {name: C#/.NET, match: 'c#|\.net\b'}
+  - {name: Rust, match: '\brust\b'}
+  - {name: Swift/Kotlin, match: '(?-i:\bSwift\b)|\bkotlin\b'}
+  - {name: Linux, match: '\blinux\b|\bunix\b'}
+  - {name: REST/GraphQL APIs, match: '\brest(ful)? apis?\b|\bgraphql\b'}
+  - {name: Microservices, match: 'micro-?services'}
+  - {name: Distributed systems, match: 'distributed systems'}
+  - {name: Terraform, match: '\bterraform\b'}
+  # 商業分析
+  - {name: Excel, match: '\b(microsoft |ms )?excel\b(?! (at|in)\b)'}
+  - {name: PowerPoint, match: '\bpowerpoint\b'}
+  - {name: Salesforce, match: '\bsalesforce\b'}
+  - {name: SAP, match: '\bsap\b'}
+  - {name: Jira/Confluence, match: '\bjira\b|\bconfluence\b'}
+  - {name: Alteryx, match: '\balteryx\b'}
+  - {name: Requirements gathering, match: 'requirements? (gathering|elicitation|analysis|documentation)|user stories'}
+  - {name: Process improvement, match: 'process (improvement|optimization|mapping|re-?engineering)'}
+  - {name: Financial modeling, match: 'financial model'}

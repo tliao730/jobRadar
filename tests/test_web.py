@@ -137,7 +137,8 @@ def test_radar_lists_recommendations_and_skips_applied_jobs(client, tmp_path):
 
     data = client.get("/api/radar", headers=AUTH).json()
     assert data["total"] == 3 and data["recommended"] == 2
-    assert [m["id"] for m in data["items"]] == ["greenhouse:1", "greenhouse:2"]
+    assert {m["id"] for m in data["items"]} == {"greenhouse:1", "greenhouse:2"}
+    assert [r["id"] for r in data["roles"]][:3] == ["mle", "ai_engineer", "ds"]  # for the filters
     assert client.post("/api/radar/dismiss", headers=AUTH, json={"id": "greenhouse:1"}).json()
     data = client.get("/api/radar", headers=AUTH).json()
     assert [m["id"] for m in data["items"]] == ["greenhouse:2"]

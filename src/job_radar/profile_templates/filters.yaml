@@ -1,17 +1,26 @@
 # 雷達篩選與評分的個人設定：只寫跟 config/filters.yaml（共用設定）不一樣的部分，其他照共用的。
 # 寫了的設定蓋過共用的；清單整個取代，只有 roles 依 id 合併（只寫要改的欄位）。
 #
-# 共用設定找的是資料／AI／軟體職缺（mle、ai_engineer、ds、de、da、swe）。方向不一樣的話，
-# 用 only_roles 指定要看哪幾類，沒列到的都不看。例如找硬體（把 # 拿掉再改）：
+# 方向：共用設定預設軟體、資料、硬體全部都看。用 only_roles 只看你要的，寫大類或類別 id：
+#   大類 software：swe、mle、ai_engineer、de（data engineer）、infra（SRE / DevOps / 雲端 / 資安）
+#   大類 data：ds、da（data analyst）、ba（business analyst）
+#   大類 hardware：digital（ASIC / FPGA / 驗證）、analog（類比 / RF）、electrical（硬體 / 電機 / 測試）、
+#                  embedded（嵌入式 / 韌體）
+# LinkedIn 的搜尋關鍵字會跟著你選的類別走，不用另外改 sources.yaml。例如（把 # 拿掉再改）：
 #
-# only_roles: [hardware, embedded]
+# only_roles: [hardware]
 #
-# 共用設定裡沒有的類別可以自己加，職稱符合 titles 任一條（regex，不分大小寫）就算，
-# 記得也加進 only_roles，例如：
+# 大類裡有一類不想看：
 #
 # roles:
-#   - {id: mech, name: Mechanical, titles: ['mechanical', 'mechatronics']}
-# only_roles: [hardware, embedded, mech]
+#   - {id: analog, enabled: false}
+#
+# 共用設定沒有的方向可以自己加一類（titles 是職稱的 regex、queries 是搜尋關鍵字），
+# 記得也加進 only_roles：
+#
+# roles:
+#   - {id: mech, name: Mechanical, titles: ['mechanical', 'mechatronics'], queries: [mechanical engineer new grad]}
+# only_roles: [hardware, mech]
 #
 # 其他常改的設定：
 #
@@ -19,7 +28,6 @@
 #   want: [intern, new_grad]          # 也想看實習
 #   max_years: 3
 # sponsorship:
-#   exclude_no_sponsorship: false     # 不需要 sponsorship
+#   exclude_no_sponsorship: false     # 不需要 sponsorship（只收美國公民的職缺也會留下）
 # roles:
-#   - {id: swe, weight: 1.0}          # 主要找 SWE
-#   - {id: da, enabled: false}        # 不看 data analyst
+#   - {id: swe, weight: 0.5}          # SWE 排後面一點（weight 0–1，預設 1）

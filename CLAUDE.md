@@ -156,11 +156,11 @@ uv run pytest                          # 含 headless Chrome 測試（需要安�
 
 - `fetchers/`：Greenhouse、Lever、Ashby，各平台一個執行緒、同一平台請求間隔 1 秒；68 家約 75 秒、約 1.4 萬個職缺。
 - `store.py`：`data/jobs.duckdb` 的 `jobs`、`fetch_results`、`runs`、`dismissed`（「不感興趣」）。每次操作開短連線、被鎖住時重試，讓排程抓取和開著的助手可以共用；同一個程式裡的執行緒輪流開（DuckDB 在一個連線關閉的同時又開新連線會報 "already attached"，2026-10-25 在介面觸發的抓取中發生過）。下架、suspect、baseline 規則同第 4 節。
-- `match.py`：不用 LLM 的規則評分。先用職稱與地點篩（便宜），通過的才讀 JD：排除 sponsorship 寫明不提供、發布超過 60 天。分數 = 加權（技能重疊（平滑過的比例）、職務偏好、層級（想找 intern / new grad，沒寫層級的分數低））。規則都在 `config/filters.yaml`（加上 `profile/filters.yaml` 的個人設定）、`config/skills.yaml`；職務類別 `roles` 有 `name`（推薦頁的標籤，由 `/api/radar` 的 `roles` 傳給頁面）；內建的 `hardware`、`embedded` 預設關閉，別的方向用 `only_roles: [...]` 只看指定的類別（`match.active_roles`，不用一類一類關；2026-11-03 朋友找硬體，第一次抓全是軟體職缺）。技能詞彙也有硬體／嵌入式（Verilog、FPGA、PCB…）；我的技能 = highlights + 履歷 + `profile/skills.yaml` 對到的詞彙。
+- `match.py`：不用 LLM 的規則評分。先用職稱與地點篩（便宜），通過的才讀 JD：排除 sponsorship 寫明不提供、發布超過 60 天。分數 = 加權（技能重疊（平滑過的比例）、職務偏好、層級（想找 intern / new grad，沒寫層級的分數低））。規則都在 `config/filters.yaml`（加上 `profile/filters.yaml` 的個人設定）、`config/skills.yaml`。共用設定不偏向任何人（2026-11-04 起；我的方向、權重、關鍵字搬到我的 `profile/`）：職務類別分三大類 `group`——software（swe、mle、ai_engineer、de、infra）、data（ds、da、ba）、hardware（digital、analog、electrical、embedded），預設全開、權重都是 1；每類有 `name`（推薦頁的標籤，由 `/api/radar` 的 `roles` 傳給頁面）與 `queries`（LinkedIn / Jobright 的搜尋關鍵字）。`only_roles` 寫大類或 id，只看那些類別（`match.active_roles`；類別裡 `enabled: false` 的仍然不看），職稱在「看的類別」裡由上而下第一個符合的為準，所以 embedded、digital、analog 排在 swe 前，infra、electrical 排在 swe 後。沒寫 `queries` 時，搜尋關鍵字＝看的類別各自的 queries，每類先搜第一個再搜第二個（`service.search_queries`，被限流時每類至少搜到一次）。地點包含 50 州全名與縮寫（排除用字邊界：曾經因為 'india' 排除了 Indianapolis）；`no_sponsorship` 也擋 ITAR 的「must be a (i) U.S. citizen」「U.S. person」，但不擋只是提到 export control 的制式文字。技能詞彙涵蓋軟體、資料、商業分析、硬體／嵌入式；我的技能 = highlights + 履歷 + `profile/skills.yaml` 對到的詞彙。
 - `service.py`：結果依抓取批次與設定、`highlights.yaml`、`profile/skills.yaml`、履歷 PDF 的修改時間快取（重算一次約 4 秒；只看技能來源的檔案，記住答案、改 `applicant.yaml` 不會讓快取失效）。助手啟動時和每次抓取完就在背景先算好，打開推薦頁不用等；同時間只算一次。同公司同職稱只留分數最高的地點。
 - 排程：`install-schedule` 寫 `~/Library/LaunchAgents/local.job-radar.fetch.plist`，紀錄在 `data/logs/fetch.log`。launchd 不會補跑 Mac 關機時錯過的 08:30（10/29、10/30 就這樣漏掉），所以排程跑 `fetch --if-stale` 並加 `RunAtLoad`：08:30、登入時、打開助手時，只要「最近一個排程時間點（今天 08:30，還沒到就算昨天的）之後還沒抓過」就抓（`RadarService.stale`；時間從已安裝的 plist 讀，`--at` 改過也照著走）。原本用「上次抓取超過 20 小時」，11/02 因為前一天下午手動抓過，08:30 被判成不用抓。
 - 「新職缺」＝最近 3 天第一次出現（`match.NEW_DAYS`；職缺板第一次被抓到的不算）。推薦頁顯示近 3 天新出現的推薦數，抓完跳出這次新增幾個、哪些來源失敗；以前只顯示「最後一次抓取」的新增數，連按兩次就變 0，看起來像壞掉。
-- `sites/`：LinkedIn（訪客職缺搜尋，只抓搜尋卡片；詳細頁兩三個請求就 429，而且不登入看不到申請連結）與 Jobright（不登入的搜尋頁，每個關鍵字前 20 筆，`__NEXT_DATA__`；2026-11 起第一個請求就導到 `/_jr/security/challenge` 真人驗證頁，依規則停下、10/24 之後沒抓到任何 Jobright 職缺）。關鍵字、間隔在 `config/sources.yaml`；遇到 429、登入頁、非結果頁就停止該網站，已抓到的保留。網站職缺不會因為這次沒出現就下架，14 天沒再看到才算下架。
+- `sites/`：LinkedIn（訪客職缺搜尋，只抓搜尋卡片；詳細頁兩三個請求就 429，而且不登入看不到申請連結）與 Jobright（不登入的搜尋頁，每個關鍵字前 20 筆，`__NEXT_DATA__`；2026-11 起第一個請求就導到 `/_jr/security/challenge` 真人驗證頁，依規則停下、10/24 之後沒抓到任何 Jobright 職缺）。關鍵字來自職務類別的 `queries`（或個人 `sources.yaml` 的 `queries`），間隔在 `config/sources.yaml`；遇到 429、登入頁、非結果頁就停止該網站，已抓到的保留。網站職缺不會因為這次沒出現就下架，14 天沒再看到才算下架。
 - Simplify（`sites/simplify.py`）：讀 `SimplifyJobs/New-Grad-Positions`（可在 `sources.yaml` 的 `simplify.repos` 加實習 repo）的 `.github/scripts/listings.json`，一次下載整份、不用關鍵字；只收 `active` 且 `is_visible` 的。連結直接是公司申請頁：Greenhouse / Lever / Ashby 的直接可自動填（`resolve.ats_job_id`），是已追蹤職缺板上的職缺就用網址對到那筆；Workday 等列在「需要自己開啟」，也不拿公司名去猜職缺板（約 3,000 家，會打出幾千個請求）。清單是完整的，沒出現就立刻下架（`SearchResult.complete`）。沒有 JD：分數只看職稱與層級（New Grad repo 標 New Grad），sponsorship 只在 Simplify 有寫時（Does Not Offer Sponsorship 等）才擋得到。2026-11-02 第一次抓：3,083 筆、77 筆能自動填且通過篩選、24 筆與既有 ATS 職缺重複。
 - `resolve.py`：網站職缺用（正規化公司名、職稱相似度 ≥ 0.6）對到 ATS 職缺，`jobs.ats_id` 記下對應；推薦頁只顯示 ATS 那筆並標「也在 LinkedIn / Jobright」。公司不在清單裡時，用完整公司名猜 Greenhouse / Lever / Ashby 代號（不用第一個字，否則 "applied"、"new" 會猜到別家），職缺板上要有職稱對得上的職缺、Greenhouse 的公司名也要對得上才算找到；結果快取在 `company_boards` 30 天。找到的公司列在推薦頁上方，按「加入」寫進自己的 `profile/companies.yaml`（共用清單 `config/companies.yaml` 不動）。對不到的網站職缺列在「需要自己開啟」，加入後只開原網頁、不自動按 ②。
 - 層級：以 new grad / entry level 為主（`levels.want`）；實習只收 co-op / off-cycle（職稱有 co-op、off-cycle 或 fall / spring / winter，或 JD 寫 co-op；JD 裡的季節常是在講學期，不算）；JD 要求超過 `max_years`（2）年經驗的排除；網站標的層級（Entry Level、New Grad、Senior Level…）也會用來判斷。
@@ -329,6 +329,8 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 - [x] LinkedIn、Jobright 搜尋，對到 ATS 職缺、自動找新公司的職缺板
 - [x] Simplify 的 GitHub 職缺清單（New Grad，可加實習）；README 給朋友的安裝與使用說明
 - [x] 其他方向（例如硬體）：`only_roles`、內建 hardware / embedded 類別與硬體技能、職務標籤由設定決定
+- [x] 共用 config 統整成軟體／資料／硬體三大類、預設中立；搜尋關鍵字跟著職務類別；約 20 家硬體公司；50 州地點；ITAR 排除
+- [ ] 改成安裝工具：`uv tool install` 安裝與更新，`profile/`、`data/`、`.env` 搬到 repo 外（`~/Library/Application Support/Job Radar/`），共用預設跟著程式發布；使用者的 Claude Code 讀資料夾裡給使用者的說明，不讀這份開發文件
 - [ ] Indeed、Glassdoor（Glassdoor 試過，對到 ATS 的比例太低，先不做）
 - [x] 正規化、upsert、migration；fetch_results、runs、下架、suspect、baseline（跨來源去重等有第二種來源再做）
 - [x] 職務類別 prefilter；`fetch`、`check-companies`
@@ -381,7 +383,8 @@ SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= REPORT_EMAIL_TO=   # Email 摘�
 | 2026-11-01 | 助手不提供作答框：沒填到的題目只列出來，我到申請頁自己填；② 之後直接進入檢查並送出 |
 | 2026-11-02 | 分享給朋友（都用 Mac、會用終端機）：clone 私人 repo 在自己的 Mac 跑，不部署（助手要控制本機的 Chrome）；雷達的個人設定放 `profile/` 同名檔 |
 | 2026-11-02 | 加 Simplify 的 GitHub 清單當來源；README 寫給朋友的安裝與使用說明（規格仍只在 CLAUDE.md） |
-| 2026-11-03 | 共用預設維持資料／AI／軟體；其他方向在 `profile/filters.yaml` 用 `only_roles`，hardware / embedded 內建但預設關閉 |
+| 2026-11-03 | 共用預設維持資料／AI／軟體；其他方向在 `profile/filters.yaml` 用 `only_roles`，hardware / embedded 內建但預設關閉（11/04 改成下一列） |
+| 2026-11-04 | 使用者是 5–10 位會用終端機的朋友，方向是軟體（含 DS、DA、BA）與硬體：共用 config 涵蓋這些方向、預設全開且不偏向我，個人方向寫在各自的 `profile/`；下一步改用 `uv tool install`、資料搬出 repo（不做雲端、不做 Mac App 打包） |
 
 ## 待決定事項
 

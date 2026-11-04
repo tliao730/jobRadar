@@ -2,7 +2,7 @@
 
 在自己的 Mac 上跑的求職小幫手，有兩個功能：
 
-- **推薦職缺**：每天早上自動抓新職缺，依你的條件排序。職缺來自 Greenhouse、Lever、Ashby 上約 70 家公司的公開職缺板、Simplify 的 New Grad 清單、LinkedIn。預設找的是**資料／AI／軟體**方向的 New Grad 職缺，其他方向（例如硬體）照第 5 步改一下設定就好。
+- **推薦職缺**：每天早上自動抓新職缺，依你的條件排序。職缺來自 Greenhouse、Lever、Ashby 上約 90 家公司（軟體、AI、硬體）的公開職缺板、Simplify 的 New Grad 清單、LinkedIn。涵蓋**軟體、資料（DS / DA / BA）、硬體**三大方向的 New Grad 職缺，在第 5 步選你要的方向。
 - **申請助手**：替你打開申請頁、自動填好基本資料、經歷和常見題目，再列出還要你自己填的題目。**送出永遠是你自己按**，助手不會替你送出。
 
 你的資料（個人資料、履歷、申請紀錄）都只存在你自己的電腦上，不會上傳到 git。
@@ -43,26 +43,23 @@ uv run job-radar init-profile
 - `profile/resumes/`：把履歷 PDF 放進去。
 - `profile/highlights.yaml`：經歷素材，選填，但填了推薦會比較準。
 
-**5. 選你要找的方向**（找資料／AI／軟體職缺的可以跳過）
+**5. 選你要找的方向**
 
-預設只推薦 data science、ML、AI engineer、data engineer、data analyst、SWE。找別的方向時，改 `profile/` 裡的兩個檔案。以硬體為例：
-
-`profile/filters.yaml`：只看硬體和嵌入式
+不設定的話，軟體、資料、硬體全部都會推薦。在 `profile/filters.yaml` 加一行 `only_roles`，只看你要的：
 
 ```yaml
-only_roles: [hardware, embedded]
+only_roles: [hardware]          # 硬體：ASIC / FPGA、類比 / RF、電機 / 測試、嵌入式
 ```
-
-`profile/sources.yaml`：LinkedIn 的搜尋關鍵字
 
 ```yaml
-queries:
-  - hardware engineer new grad
-  - electrical engineer new grad
-  - embedded software engineer new grad
+only_roles: [software]          # 軟體：SWE、MLE、AI engineer、data engineer、SRE / 資安
 ```
 
-其他方向、多抓哪些公司，見[補充 B](#b-調整推薦條件)。
+```yaml
+only_roles: [ds, da, ba]        # 資料：data science、data analyst、business analyst
+```
+
+大類和細項可以混著寫，例如 `[software, ds]`。LinkedIn 的搜尋關鍵字會自動跟著你選的方向。所有類別見[補充 B](#b-調整推薦條件)。
 
 **6. 放到 Dock、開啟每日抓取**
 
@@ -122,42 +119,64 @@ answers:
 
 共用的預設在 `config/` 資料夾，那是大家共用、放在 git 裡的檔案，**不要改**。你個人的設定寫在 `profile/` 裡同名的三個檔案，**只寫跟預設不一樣的部分**，其他照預設。這樣 `git pull` 更新時永遠不會衝突。
 
-- **`profile/filters.yaml`**：要找的職務、層級、地點、sponsorship。預設是資料／AI／軟體職務、以 New Grad / Entry Level 為主、實習只看 co-op / off-cycle、要求超過 2 年經驗的排除、JD 寫明不提供 sponsorship 的排除、地點限美國。
+- **`profile/filters.yaml`**：要找的職務、層級、地點、sponsorship。預設是全部職務、以 New Grad / Entry Level 為主、實習只看 co-op / off-cycle、要求超過 2 年經驗的排除、JD 寫明不提供 sponsorship 或只收美國公民（ITAR）的排除、地點限美國。
 
-  **職務**：職稱符合某個「職務類別」的才會推薦。內建的類別：
+  **職務**：職稱符合某個「職務類別」的才會推薦。`only_roles` 可以寫大類，也可以寫類別 id：
 
-  | id | 推薦頁顯示 | 預設 |
-  |---|---|---|
-  | `mle` | MLE | 開 |
-  | `ai_engineer` | AI Engineer | 開 |
-  | `ds` | Data Science | 開 |
-  | `de` | Data Eng | 開 |
-  | `da` | Analyst | 開 |
-  | `swe` | SWE | 開 |
-  | `hardware` | Hardware（electrical、ASIC、FPGA、RTL、verification、analog、PCB…） | 關 |
-  | `embedded` | Embedded（embedded、firmware） | 關 |
+  | 大類 | id | 推薦頁顯示 | 包含的職稱（例） |
+  |---|---|---|---|
+  | `software` | `swe` | SWE | software engineer / developer、SDE、frontend、backend、full stack、iOS / Android |
+  | | `mle` | MLE | machine learning engineer、applied scientist |
+  | | `ai_engineer` | AI Engineer | AI engineer、LLM、generative AI |
+  | | `de` | Data Eng | data engineer、analytics engineer |
+  | | `infra` | Infra / Security | SRE、DevOps、cloud / platform engineer、security engineer |
+  | `data` | `ds` | Data Science | data scientist、research scientist、quant |
+  | | `da` | Data Analyst | data analyst、BI analyst、product analyst |
+  | | `ba` | Business Analyst | business analyst、business operations、strategy & operations、technology analyst |
+  | `hardware` | `digital` | Digital / ASIC | ASIC、FPGA、RTL、SoC、design verification、physical design、DFT |
+  | | `analog` | Analog / RF | analog、mixed-signal、RF、circuit design、power electronics、photonics |
+  | | `electrical` | Hardware / Electrical | hardware engineer、electrical engineer、PCB、avionics、test engineer |
+  | | `embedded` | Embedded / Firmware | embedded software、firmware、device drivers |
 
-  用 `only_roles` 指定只看哪幾類，沒列到的都不看。內建沒有的方向可以自己加一類，職稱符合 `titles` 任一條就算（regex、不分大小寫），記得也加進 `only_roles`：
+  大類裡有一類不想看，就把它關掉：
 
   ```yaml
-  only_roles: [hardware, embedded, mech]
+  only_roles: [hardware]
   roles:
-    - {id: mech, name: Mechanical, titles: ['mechanical', 'mechatronics']}
+    - {id: analog, enabled: false}
   ```
 
-  每一類的關鍵字定義在 `config/filters.yaml` 的 `roles`。覺得有職缺被漏掉，可以在自己的檔案裡補（同一個 id 會蓋過共用的，`titles` 要列出全部）。
+  內建沒有的方向可以自己加一類：`titles` 是職稱的 regex（不分大小寫），`queries` 是 LinkedIn 的搜尋關鍵字，記得也加進 `only_roles`：
+
+  ```yaml
+  only_roles: [hardware, mech]
+  roles:
+    - {id: mech, name: Mechanical, titles: ['mechanical', 'mechatronics'], queries: [mechanical engineer new grad]}
+  ```
+
+  每一類的定義在 `config/filters.yaml` 的 `roles`。覺得哪種職稱被漏掉或分錯類，對大家都適用的請發 PR 改 `config/filters.yaml`。
 
   **其他常改的設定**：
 
   ```yaml
   levels:
-    want: [intern, new_grad]        # 也想看實習
+    want: [intern, new_grad]        # 也想看實習（co-op / off-cycle）
   sponsorship:
-    exclude_no_sponsorship: false   # 不需要 sponsorship
+    exclude_no_sponsorship: false   # 不需要 sponsorship（只收美國公民的職缺也會留下）
   roles:
-    - {id: swe, weight: 1.0}        # 主要找 SWE（weight 0–1，越高越前面）
-    - {id: da, enabled: false}      # 不看 data analyst
+    - {id: swe, weight: 0.5}        # SWE 排後面一點（weight 0–1，預設 1）
   ```
+
+  **找暑期實習**：預設只留 co-op / off-cycle 實習。要找一般的暑期實習：
+
+  ```yaml
+  levels:
+    want: [intern]
+    intern_requires: []
+    intern_requires_in_jd: []
+  ```
+
+  再照[補充 C](#c-職缺從哪裡來哪些能自動填) 加上 Simplify 的實習清單。
 
 - **`profile/companies.yaml`**：要多抓或不抓的公司。推薦頁上方「找到的公司」按 **＋ 加入** 也會寫進這裡。
 
@@ -169,26 +188,15 @@ answers:
 
   `token` 是職缺板網址裡的代號，例如 `job-boards.greenhouse.io/stripe`、`jobs.lever.co/xxx`、`jobs.ashbyhq.com/xxx`。加完執行 `uv run job-radar check-companies` 確認代號正確。
 
-  共用清單大多是 AI／軟體公司。找硬體的話，可以先加這幾家（都驗證過，New Grad 硬體職缺多）：
-
-  ```yaml
-  companies:
-    - {name: "SpaceX", platform: greenhouse, token: spacex}
-    - {name: "Anduril", platform: greenhouse, token: andurilindustries}
-    - {name: "Rocket Lab", platform: greenhouse, token: rocketlab}
-    - {name: "Astranis", platform: greenhouse, token: astranis}
-    - {name: "Astera Labs", platform: greenhouse, token: asteralabs}
-    - {name: "Shield AI", platform: lever, token: shieldai}
-  ```
+  共用清單有約 70 家軟體／AI 公司，和約 20 家硬體公司（SpaceX、Anduril、Rocket Lab、Astera Labs、Tenstorrent、Samsung Semiconductor…）。
 
   NVIDIA、Apple、AMD、Intel、Qualcomm 這類大公司用 Workday 或自己的系統，沒辦法加進來。它們的職缺會從 Simplify 和 LinkedIn 進來，列在「需要自己開啟」。
 
-- **`profile/sources.yaml`**：LinkedIn / Jobright 的搜尋關鍵字、要不要用某個網站、Simplify 要讀哪些清單。預設的關鍵字是資料／AI 職缺，方向不同就一定要改。
+- **`profile/sources.yaml`**：要不要用某個網站、Simplify 要讀哪些清單、自己指定搜尋關鍵字。關鍵字預設跟著 `only_roles` 選的類別走，通常不用改。
 
   ```yaml
-  queries:                          # 整個取代預設的關鍵字
-    - software engineer new grad
-    - software engineer
+  queries:                          # 自己指定（整個取代自動產生的關鍵字）
+    - FPGA engineer new grad
   jobright:
     enabled: false                  # 不用 Jobright
   ```
@@ -199,7 +207,7 @@ answers:
 
 | 來源 | 怎麼抓 | 能自動填嗎 |
 |---|---|---|
-| Greenhouse / Lever / Ashby 職缺板 | 公司公開的 API（`config/companies.yaml` 約 70 家，加上你自己的） | 能 |
+| Greenhouse / Lever / Ashby 職缺板 | 公司公開的 API（`config/companies.yaml` 約 90 家，加上你自己的） | 能 |
 | Simplify | 讀 Simplify 在 GitHub 公開的 [New Grad 清單](https://github.com/SimplifyJobs/New-Grad-Positions)，每天下載整份 | 連結是 Greenhouse / Lever / Ashby 的能；Workday 等其他系統列在「需要自己開啟」 |
 | LinkedIn | 不登入的職缺搜尋，只看搜尋結果 | 能對到上面職缺板的就能；對不到的要自己開 |
 | Jobright | 不登入的搜尋頁 | 同上（目前常被真人驗證擋下） |
@@ -259,7 +267,7 @@ git pull && uv sync
 - **遇到 CAPTCHA 或「確認你是真人」**：助手會停下，交給你處理。
 - **不小心關掉填好的分頁**：「我的申請」會標「分頁已關」，按 **恢復申請頁** 會重新打開並再填一次。直接在頁面上打的字救不回來。
 - **點 Dock 圖示沒反應**：看 `data/logs/ui.log`。如果搬動過專案資料夾，要重跑 `uv run job-radar install-app`。
-- **推薦的都不是我要的方向**（例如找硬體，卻全是軟體職缺）：預設只看資料／AI／軟體。照安裝第 5 步在 `profile/filters.yaml` 寫 `only_roles`、在 `profile/sources.yaml` 改關鍵字，再按 **重新抓取**。
+- **推薦混了不是我要的方向**：預設全部方向都推薦。照安裝第 5 步在 `profile/filters.yaml` 寫 `only_roles`，打開推薦頁就會重新篩選；按 **重新抓取** 會用新方向的關鍵字搜 LinkedIn。
 - **推薦太少或太多**：用 `uv run job-radar radar --excluded` 看每個職缺被排除的原因，再照[補充 B](#b-調整推薦條件) 調整。
 
 ### H. 常用指令

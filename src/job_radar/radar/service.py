@@ -10,7 +10,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from importlib import resources
-from itertools import repeat
+from itertools import repeat, zip_longest
 
 import httpx
 
@@ -29,6 +29,16 @@ log = logging.getLogger(__name__)
 REQUEST_GAP_S = 1.0  # between requests to the same platform
 DAILY_AT = (8, 30)  # local time of the daily fetch unless install-schedule --at says otherwise
 ATS_VALUES = {p.value for p in ATS_PLATFORMS}
+
+
+def search_queries(radar: RadarConfig) -> list[str]:
+    """What the job sites are searched for: `queries` from sources.yaml when someone set it,
+    else the queries of the role families in use, every family's first query before any
+    second one (a site that rate-limits midway has then searched each family once)."""
+    if radar.sources.queries:
+        return radar.sources.queries
+    rounds = zip_longest(*(r.queries for r in active_roles(radar.filters)))
+    return list(dict.fromkeys(q for row in rounds for q in row if q))
 
 
 class RadarService:
@@ -70,12 +80,13 @@ class RadarService:
         try:
             radar = self.radar_config()
             companies = [c for c in radar.companies if c.enabled]
+            sources = radar.sources.model_copy(update={"queries": search_queries(radar)})
             searchers = [
                 site
                 for site in SITES.values()
                 if sites
-                and site.config(radar.sources).enabled
-                and (radar.sources.queries or not site.needs_queries)
+                and site.config(sources).enabled
+                and (sources.queries or not site.needs_queries)
             ]
             started = utcnow()
             own_client = client is None
@@ -88,7 +99,7 @@ class RadarService:
                 with ThreadPoolExecutor(max_workers=workers) as pool:
                     # map() queues every task at once, so boards and job sites run side by side.
                     batches = pool.map(self._fetch_boards, by_platform.values(), repeat(client))
-                    found = pool.map(lambda site: site.search(radar.sources, client), searchers)
+                    found = pool.map(lambda site: site.search(sources, client), searchers)
                     results = [r for batch in batches for r in batch]
                     searches = list(found)
                 stats = self.store.record_run(command, results, started, searches)

@@ -62,15 +62,17 @@ class Match:
 
 
 def active_roles(filters: Filters) -> list[RoleFamily]:
-    """The role families jobs are matched against: those named in `only_roles` (whatever their
-    `enabled`), else every enabled one. A friend looking for hardware jobs only writes
-    `only_roles: [hardware, embedded]` instead of switching each software family off."""
+    """The role families jobs are matched against: the enabled ones, narrowed to `only_roles`
+    (role ids or groups) when it is set. Someone after hardware jobs writes
+    `only_roles: [hardware]` instead of switching every other family off."""
+    roles = [r for r in filters.roles if r.enabled]
     if not filters.only_roles:
-        return [r for r in filters.roles if r.enabled]
-    known = {r.id for r in filters.roles}
+        return roles
+    known = {r.id for r in filters.roles} | {r.group for r in filters.roles if r.group}
     for unknown in [i for i in filters.only_roles if i not in known]:
-        log.warning("only_roles 裡的「%s」不是 filters.yaml 的職務類別 id", unknown)
-    return [r for r in filters.roles if r.id in filters.only_roles]
+        log.warning("only_roles 裡的「%s」不是 filters.yaml 的職務類別 id 或大類", unknown)
+    wanted = set(filters.only_roles)
+    return [r for r in roles if r.id in wanted or r.group in wanted]
 
 
 def _any(patterns: list[str]) -> re.Pattern | None:

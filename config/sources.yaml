@@ -1,17 +1,9 @@
 # 職缺網站（不登入）。結果會和 ATS 職缺比對：對得到就用 ATS 申請頁（能自動填），
 # 對不到的列成「需要自己開啟」。遇到 429、登入頁或驗證頁就停止該網站，記在抓取結果裡。
-# 這是共用設定；個人的搜尋關鍵字、要不要用某個網站，寫在 profile/sources.yaml。
-queries:
-  - AI engineer new grad
-  - data scientist new grad
-  - machine learning engineer new grad
-  - data engineer new grad
-  - data analyst new grad
-  - AI engineer
-  - data scientist
-  - machine learning engineer
-  - data engineer
-  - data analyst
+# 這是共用設定；個人的設定（要不要用某個網站、自己指定關鍵字）寫在 profile/sources.yaml。
+#
+# 搜尋關鍵字：預設用 filters.yaml 裡「你看的職務類別」各自的 queries（每類先搜第一個，再搜第二個），
+# 所以選了方向（only_roles）就會搜對應的關鍵字。在 profile/sources.yaml 寫 queries 就改用你列的。
 location: United States
 days: 7                 # 只看最近幾天發布的
 

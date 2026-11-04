@@ -73,3 +73,23 @@ companies:
   - {name: "Zoox", platform: lever, token: zoox}
   - {name: "Accenture Federal Services", platform: greenhouse, token: accenturefederalservices}
   - {name: "Agoda", platform: greenhouse, token: agoda}
+  # 硬體（航太、國防、晶片、機器人）。2026-11-04 從 Simplify 的硬體職缺挑出、驗證過，都有美國的硬體職缺。
+  - {name: "SpaceX", platform: greenhouse, token: spacex}
+  - {name: "Anduril", platform: greenhouse, token: andurilindustries}
+  - {name: "Rocket Lab", platform: greenhouse, token: rocketlab}
+  - {name: "Astranis", platform: greenhouse, token: astranis}
+  - {name: "Varda Space", platform: greenhouse, token: vardaspace}
+  - {name: "Muon Space", platform: greenhouse, token: muonspace}
+  - {name: "Castelion", platform: greenhouse, token: castelioncorporation}
+  - {name: "Mach Industries", platform: greenhouse, token: machindustries}
+  - {name: "Astera Labs", platform: greenhouse, token: asteralabs}
+  - {name: "Tenstorrent", platform: greenhouse, token: tenstorrent}
+  - {name: "Samsung Semiconductor", platform: greenhouse, token: samsungsemiconductor}
+  - {name: "SiTime", platform: greenhouse, token: sitimecorporation}
+  - {name: "Etched", platform: ashby, token: etched}
+  - {name: "Quadric", platform: ashby, token: quadric}
+  - {name: "Figure", platform: greenhouse, token: figureai}
+  - {name: "Skydio", platform: ashby, token: skydio}
+  - {name: "Neuralink", platform: greenhouse, token: neuralink}
+  - {name: "Verkada", platform: greenhouse, token: verkada}
+  - {name: "Base Power", platform: ashby, token: base-power}
