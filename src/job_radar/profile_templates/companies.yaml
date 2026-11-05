@@ -1,4 +1,4 @@
-# 我自己要多抓的公司，加在共用清單 config/companies.yaml 之外；推薦頁按「加入」的公司也寫在這裡。
+# 我自己要多抓的公司，加在共用清單 defaults/companies.yaml 之外；推薦頁按「加入」的公司也寫在這裡。
 # 同一個 platform + token 會蓋過共用清單的那一筆，例如不想抓共用清單裡的某家：
 #   - {platform: ashby, token: openai, enabled: false}
 # 加完執行 `uv run job-radar check-companies` 驗證代號。

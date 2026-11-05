@@ -1,12 +1,13 @@
-# 可調整的設定。密鑰放在 .env。
+# 申請助手的共用設定（在 git 裡，跟著程式發布）。個人不同的部分寫在你資料夾的
+# profile/settings.yaml，只寫要改的設定；密鑰放在 .env。
 
-paths:
+paths:                      # 相對於你的資料夾（job-radar home）
   profile_dir: profile
   data_dir: data
 
 browser:
   # chrome：使用已安裝的 Google Chrome。設為 null 改用 Playwright 內建的 Chromium
-  # （需先執行 uv run playwright install chromium）。
+  # （需先為 Playwright 下載 Chromium）。
   channel: chrome
   user_data_dir: data/browser-profile
 

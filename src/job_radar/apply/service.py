@@ -90,7 +90,7 @@ class ApplyService:
         llm = {
             "model": self._model_name(),
             "drafts": self.llm is not None,
-            "credential": describe_anthropic_credential(self.cfg.root),
+            "credential": describe_anthropic_credential(self.cfg.home),
         }
         try:
             profile = load_profile(self.cfg.profile_dir)

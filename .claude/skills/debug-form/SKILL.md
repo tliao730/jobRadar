@@ -7,7 +7,7 @@ description: Debug the application assistant on a real job form. Use when a site
 
 Work toward a **red** loop: one command that reproduces the user's exact symptom on the real page. Nothing is ever submitted; every page action goes through `SafePage`.
 
-1. **Collect the evidence.** The user's last scan is `data/applications/<job>/form.json` (each answer's `category`, `filled`, `error`, `field.section`). Note the exact error text; that is the symptom the loop must show.
+1. **Collect the evidence.** Paths below are inside the user's home folder (`uv run job-radar home`). The user's last scan is `data/applications/<job>/form.json` (each answer's `category`, `filled`, `error`, `field.section`). Note the exact error text; that is the symptom the loop must show.
 2. **Reproduce in isolation.** `uv run job-radar inspect "<url>" --fill` (temporary Chrome profile; add `--headed` to watch). Done when the table shows the same failure as form.json, or shows it passing.
 3. **If isolation is green, reproduce the user's conditions.** Drive the running assistant through its API with the token from `data/ui-session.json`: `POST /api/applications/<id>/open`, then `/prefill`. A freshly launched assistant (Dock) has a cold cache and loads pages slower; repeat 3–5 runs to get a reproduction rate. Done when one scripted command goes red reliably.
 4. **Instrument, then fix.** Tag temporary logs `[DEBUG-xxxx]`, capture `pageerror`/console errors, and check the known causes below first. Turn the pattern into a fixture in `tests/fixtures/forms/` plus a failing test, watch it fail, fix, watch it pass, then re-run the step 3 loop. Remove every `[DEBUG-` line.

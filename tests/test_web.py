@@ -19,7 +19,7 @@ AUTH = {"X-JR-Token": TOKEN}
 @pytest.fixture
 def client(tmp_path, profile_dir, fake_llm):
     cfg = AppConfig(
-        root=tmp_path,
+        home=tmp_path,
         paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "data")),
     )
     browser = BrowserManager(tmp_path / "browser-profile", channel=None, headless=True)
@@ -109,15 +109,10 @@ def test_radar_lists_recommendations_and_skips_applied_jobs(client, tmp_path):
 
     from job_radar.radar.models import Company, Platform, Posting
     from job_radar.radar.store import BoardResult, RadarStore
-    from tests.test_radar import ROOT_CONFIG
 
     assert client.get("/api/radar").status_code == 403
-    assert client.get("/api/radar", headers=AUTH).json()["total"] == 0  # no config, no jobs
+    assert client.get("/api/radar", headers=AUTH).json()["total"] == 0  # nothing fetched yet
 
-    config = tmp_path / "config"
-    config.mkdir()
-    for name in ("filters.yaml", "skills.yaml"):
-        (config / name).write_text((ROOT_CONFIG / name).read_text())
     co = Company(name="Example Co", platform=Platform.GREENHOUSE, token="exampleco")
     postings = [
         Posting(
@@ -148,7 +143,7 @@ def test_prefill_refreshes_questions_from_the_ats(tmp_path, profile_dir, fake_ll
     from job_radar.apply.intake import parse_job_url
 
     cfg = AppConfig(
-        root=tmp_path,
+        home=tmp_path,
         paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "data")),
     )
     service = ApplyService(

@@ -19,7 +19,7 @@ IN_PERSON = "Are you open to working in-person in one of our offices 25% of the 
 @pytest.fixture
 async def service(tmp_path, profile_dir, fake_llm, page):  # `page` skips when Chrome is missing
     cfg = AppConfig(
-        root=tmp_path,
+        home=tmp_path,
         paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "data")),
     )
     browser = BrowserManager(tmp_path / "browser-profile", channel="chrome", headless=True)

@@ -1,4 +1,11 @@
-"""Configuration: tunable values from config/settings.yaml, secrets from the environment."""
+"""Configuration and where things live.
+
+- Shared defaults ship inside the package (`defaults/`, in git): everyone gets the same ones
+  and an update replaces them, so nobody edits them in place.
+- Each person's files live in their home folder, `~/Library/Application Support/Job Radar/`
+  (or $JOB_RADAR_HOME): `profile/` (their facts and settings, which override the defaults),
+  `data/` (databases, logs, the browser profile) and `.env` (secrets).
+"""
 
 from __future__ import annotations
 
@@ -12,6 +19,12 @@ from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 log = logging.getLogger(__name__)
+
+PACKAGE_DIR = Path(__file__).resolve().parent
+DEFAULTS_DIR = PACKAGE_DIR / "defaults"
+APP_SUPPORT = Path.home() / "Library" / "Application Support" / "Job Radar"
+CHECKOUT = PACKAGE_DIR.parents[1]  # the repository, when running from a source checkout
+LEGACY_DIRS = ("profile", "data")  # what a clone held before 2026-11-04, when it was the home
 
 Effort = Literal["low", "medium", "high", "xhigh", "max"]
 
@@ -65,7 +78,8 @@ class UIConfig(BaseModel):
 
 
 class AppConfig(BaseModel):
-    root: Path
+    home: Path  # this person's folder: profile/, data/, .env
+    defaults_dir: Path = DEFAULTS_DIR  # the shared settings shipped with the package
     paths: PathsConfig = Field(default_factory=PathsConfig)
     browser: BrowserConfig = Field(default_factory=BrowserConfig)
     llm: LLMConfig = Field(default_factory=LLMConfig)
@@ -75,7 +89,7 @@ class AppConfig(BaseModel):
 
     def resolve(self, path: str) -> Path:
         p = Path(path).expanduser()
-        return p if p.is_absolute() else self.root / p
+        return p if p.is_absolute() else self.home / p
 
     @property
     def profile_dir(self) -> Path:
@@ -90,22 +104,48 @@ class AppConfig(BaseModel):
         return self.resolve(self.browser.user_data_dir)
 
 
-def find_root() -> Path:
-    """Project root: $JOB_RADAR_ROOT, else the current directory."""
-    return Path(os.environ.get("JOB_RADAR_ROOT", Path.cwd())).resolve()
+def legacy_home(checkout: Path | None = None) -> Path | None:
+    """A source checkout still holding profile/ or data/ from when the clone was the home
+    folder (before 2026-11-04), else None."""
+    checkout = checkout or CHECKOUT
+    if (checkout / "pyproject.toml").is_file() and any(
+        (checkout / name).is_dir() for name in LEGACY_DIRS
+    ):
+        return checkout
+    return None
 
 
-def load_config(root: Path | None = None) -> AppConfig:
-    root = (root or find_root()).resolve()
-    settings_path = root / "config" / "settings.yaml"
-    data = {}
-    if settings_path.exists():
-        data = yaml.safe_load(settings_path.read_text(encoding="utf-8")) or {}
-    else:
-        log.warning("找不到 %s，使用預設設定", settings_path)
-    env = EnvSettings(_env_file=root / ".env")  # type: ignore[call-arg]
-    _export_dotenv(root / ".env")
-    return AppConfig(root=root, env=env, **data)
+def find_home() -> Path:
+    """$JOB_RADAR_HOME, else ~/Library/Application Support/Job Radar. A checkout that still
+    holds the old profile/ and data/ stays in use (with a warning) until `job-radar migrate`,
+    so a `git pull` alone never strands someone's data and daily fetch."""
+    if env := os.environ.get("JOB_RADAR_HOME"):
+        return Path(env).expanduser().resolve()
+    legacy = legacy_home()
+    if legacy and not APP_SUPPORT.exists():
+        log.warning("資料還在舊位置 %s：執行 `job-radar migrate` 搬到 %s", legacy, APP_SUPPORT)
+        return legacy
+    return APP_SUPPORT
+
+
+def load_config(home: Path | None = None) -> AppConfig:
+    """Shared settings.yaml, overridden by the person's own profile/settings.yaml (only the
+    keys they change, merged like the radar's settings)."""
+    from job_radar.radar.models import merge_settings
+
+    home = (home or find_home()).resolve()
+    data = merge_settings(
+        _read_yaml(DEFAULTS_DIR / "settings.yaml"), _read_yaml(home / "profile" / "settings.yaml")
+    )
+    env = EnvSettings(_env_file=home / ".env")  # type: ignore[call-arg]
+    _export_dotenv(home / ".env")
+    return AppConfig(home=home, env=env, **data)
+
+
+def _read_yaml(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
 def _read_dotenv(path: Path) -> dict[str, str]:
@@ -122,7 +162,7 @@ def _read_dotenv(path: Path) -> dict[str, str]:
 def _export_dotenv(path: Path) -> None:
     """Expose ANTHROPIC_* values from `.env` to the Anthropic SDK, which reads os.environ.
 
-    The project's `.env` wins over the shell: whoever owns the key in `.env` pays for this
+    The home folder's `.env` wins over the shell: whoever owns the key in `.env` pays for this
     project's API calls, even if another key (for example a lab's) is exported globally.
     """
     for key, value in _read_dotenv(path).items():
@@ -137,12 +177,12 @@ def has_anthropic_credential() -> bool:
     return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
 
 
-def describe_anthropic_credential(root: Path) -> str:
+def describe_anthropic_credential(home: Path) -> str:
     """Which credential the Anthropic SDK will use, for display (never the full key)."""
     key = os.environ.get("ANTHROPIC_API_KEY")
     if key:
         source = (
-            ".env" if _read_dotenv(root / ".env").get("ANTHROPIC_API_KEY") == key else "環境變數"
+            ".env" if _read_dotenv(home / ".env").get("ANTHROPIC_API_KEY") == key else "環境變數"
         )
         return f"金鑰 …{key[-4:]}（{source}）"
     if os.environ.get("ANTHROPIC_AUTH_TOKEN"):

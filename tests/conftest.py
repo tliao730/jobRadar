@@ -14,6 +14,16 @@ from job_radar.profile import Profile, load_profile
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
+
+@pytest.fixture(autouse=True)
+def isolated_home(tmp_path_factory, monkeypatch):
+    """No test reads or writes a real home folder: not ~/Library/Application Support, and not
+    a checkout that still holds someone's profile/ and data/."""
+    home = tmp_path_factory.mktemp("home")
+    monkeypatch.setenv("JOB_RADAR_HOME", str(home))
+    return home
+
+
 APPLICANT = {
     "basic": {
         "first_name": "Jane",

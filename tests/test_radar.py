@@ -7,7 +7,7 @@ import pytest
 import respx
 import yaml
 
-from job_radar.config import AppConfig, PathsConfig
+from job_radar.config import DEFAULTS_DIR, AppConfig, PathsConfig
 from job_radar.radar.fetchers import FETCHERS, FetchError, TokenNotFound
 from job_radar.radar.fetchers import base as fetch_base
 from job_radar.radar.match import Matcher, min_years
@@ -16,7 +16,7 @@ from job_radar.radar.service import RadarService
 from job_radar.radar.store import BoardResult, RadarStore
 from tests.conftest import FIXTURES
 
-ROOT_CONFIG = FIXTURES.parents[1] / "config"
+ROOT_CONFIG = DEFAULTS_DIR
 GH = Company(name="Example Co", platform=Platform.GREENHOUSE, token="exampleco")
 LV = Company(name="Lever Co", platform=Platform.LEVER, token="leverco")
 AB = Company(name="Ashby Co", platform=Platform.ASHBY, token="ashbyco")
@@ -170,13 +170,23 @@ def test_init_profile_templates_change_nothing_until_edited(tmp_path, monkeypatc
     from typer.testing import CliRunner
 
     from job_radar.cli import app
+    from job_radar.config import load_config
 
-    monkeypatch.setenv("JOB_RADAR_ROOT", str(tmp_path))
+    monkeypatch.setenv("JOB_RADAR_HOME", str(tmp_path))
     result = CliRunner().invoke(app, ["init-profile"])
     assert result.exit_code == 0, result.output
     profile = tmp_path / "profile"
-    assert {"filters.yaml", "sources.yaml", "companies.yaml"} <= {p.name for p in profile.iterdir()}
+    personal = {"filters.yaml", "sources.yaml", "companies.yaml", "settings.yaml"}
+    assert personal <= {p.name for p in profile.iterdir()}
+    assert (tmp_path / ".env").exists() and (tmp_path / "CLAUDE.md").exists()
     assert load_radar_config(ROOT_CONFIG, profile) == load_radar_config(ROOT_CONFIG)
+    assert load_config(tmp_path).model_dump(exclude={"home"}) == load_config(
+        tmp_path / "elsewhere"
+    ).model_dump(exclude={"home"})
+    # Running it again keeps what is there.
+    (profile / "filters.yaml").write_text("only_roles: [hardware]\n")
+    assert CliRunner().invoke(app, ["init-profile"]).exit_code == 0
+    assert (profile / "filters.yaml").read_text() == "only_roles: [hardware]\n"
 
 
 @pytest.fixture
@@ -405,7 +415,9 @@ def test_service_fetches_ranks_and_merges_locations(tmp_path, profile_dir, monke
         return_value=httpx.Response(404)
     )
     cfg = AppConfig(
-        root=tmp_path, paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d"))
+        home=tmp_path,
+        defaults_dir=config,
+        paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d")),
     )
     service = RadarService(cfg)
     assert service.stale()  # never fetched: opening the assistant should fetch
@@ -459,7 +471,7 @@ def test_threads_of_one_process_take_turns_with_the_database(tmp_path):
 
 
 def test_the_daily_fetch_is_due_once_its_time_has_passed(tmp_path, monkeypatch):
-    service = RadarService(AppConfig(root=tmp_path, paths=PathsConfig(data_dir=str(tmp_path))))
+    service = RadarService(AppConfig(home=tmp_path, paths=PathsConfig(data_dir=str(tmp_path))))
 
     def fetched_at(local: datetime) -> None:
         finished = local.astimezone(UTC).replace(tzinfo=None)  # runs are stored in UTC

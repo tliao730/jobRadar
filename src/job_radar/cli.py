@@ -6,8 +6,11 @@ import logging
 import os
 import secrets
 import shutil
+import subprocess
+import sys
 from importlib import resources
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from rich.console import Console
@@ -15,7 +18,13 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from job_radar.apply.models import AppStatus
-from job_radar.config import AppConfig, has_anthropic_credential, load_config
+from job_radar.config import (
+    APP_SUPPORT,
+    AppConfig,
+    has_anthropic_credential,
+    legacy_home,
+    load_config,
+)
 
 app = typer.Typer(help="Job Radar：申請助手與職缺追蹤", no_args_is_help=True)
 apply_app = typer.Typer(help="申請助手", no_args_is_help=True)
@@ -28,7 +37,8 @@ def main(verbose: bool = typer.Option(False, "--verbose", "-v", help="顯示除�
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(message)s",
-        handlers=[RichHandler(console=console, show_path=False, markup=False)],
+        # Logs on stderr: stdout stays clean for output like `job-radar home --path`.
+        handlers=[RichHandler(console=Console(stderr=True), show_path=False, markup=False)],
     )
     for noisy in ("httpx", "httpcore", "anthropic"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
@@ -77,7 +87,7 @@ def _show_running(cfg: AppConfig) -> bool:
 
 @app.command()
 def ui(
-    port: int | None = typer.Option(None, help="埠號（預設讀 config/settings.yaml）"),
+    port: int | None = typer.Option(None, help="埠號（預設讀 settings.yaml 的 ui.port）"),
     open_browser: bool = typer.Option(
         True, "--open/--no-open", help="在程式控制的 Chrome 開啟主頁；關掉那個視窗即結束"
     ),
@@ -118,6 +128,13 @@ def ui(
         remove_session(cfg.data_dir, token)
 
 
+def job_radar_command() -> Path:
+    """The `job-radar` the Dock app and the daily fetch run: the one on PATH (the uv tool, or
+    this checkout's .venv under `uv run`), else the one running now."""
+    found = shutil.which("job-radar")
+    return Path(found).absolute() if found else Path(sys.argv[0]).absolute()
+
+
 @app.command("install-app")
 def install_app(
     dock: bool = typer.Option(True, "--dock/--no-dock", help="同時加到 Dock"),
@@ -126,42 +143,99 @@ def install_app(
     from job_radar.desktop import add_to_dock
     from job_radar.desktop import install_app as build
 
-    uv = shutil.which("uv")
-    if uv is None:
-        console.print("[red]找不到 uv，請先安裝 uv[/red]")
-        raise typer.Exit(1)
     cfg = load_config()
-    app_path = build(cfg.root, Path(uv).resolve(), Path.home() / "Applications")
+    app_path = build(cfg.home, job_radar_command(), Path.home() / "Applications")
     console.print(f"已建立 {app_path}")
     if dock:
         added = add_to_dock(app_path)
         console.print("已加到 Dock。" if added else "Dock 上已經有了。")
 
 
+# Copied into the home folder by init-profile: template name → path inside the home folder.
+HOME_TEMPLATES = {
+    "applicant.yaml": "profile/applicant.yaml",
+    "highlights.yaml": "profile/highlights.yaml",
+    # Personal radar and app settings, over the shared defaults/ (all comments at first).
+    "filters.yaml": "profile/filters.yaml",
+    "sources.yaml": "profile/sources.yaml",
+    "companies.yaml": "profile/companies.yaml",
+    "settings.yaml": "profile/settings.yaml",
+    "env": ".env",
+    "home_CLAUDE.md": "CLAUDE.md",  # for the person's own Claude Code, opened in this folder
+}
+
+
 @app.command("init-profile")
 def init_profile() -> None:
-    """建立 profile/ 範本（已存在的檔案不會被覆蓋）。"""
+    """建立你的資料夾與範本（已存在的檔案不會被覆蓋）。"""
     cfg = load_config()
-    target = cfg.profile_dir
-    (target / "resumes").mkdir(parents=True, exist_ok=True)
+    (cfg.profile_dir / "resumes").mkdir(parents=True, exist_ok=True)
     templates = resources.files("job_radar.profile_templates")
-    personal_radar = ("filters.yaml", "sources.yaml", "companies.yaml")  # over config/
-    for name in ("applicant.yaml", "highlights.yaml", *personal_radar):
-        dest = target / name
+    for name, relative in HOME_TEMPLATES.items():
+        dest = cfg.home / relative
         if dest.exists():
-            console.print(f"保留既有的 {dest}")
+            console.print(f"保留既有的 {relative}")
             continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
         with resources.as_file(templates / name) as src:
             shutil.copy(src, dest)
-        console.print(f"已建立 {dest}")
+        console.print(f"已建立 {relative}")
     console.print(
-        f"\n下一步：\n  1. 填寫 {target / 'applicant.yaml'}\n"
-        f"  2. 把履歷 PDF 放進 {target / 'resumes'}（檔名就是版本名稱，例如 ds.pdf、mle.pdf）\n"
-        f"  3. 在 {target / 'highlights.yaml'} 寫下經歷素材\n"
-        f"  4. 要找的層級、職務、公司跟共用設定不同時，改 {target} 裡的 filters.yaml、"
-        "sources.yaml、companies.yaml\n"
-        "  5. uv run job-radar ui"
+        f"\n你的資料夾：[bold]{cfg.home}[/bold]（`job-radar home --open` 用 Finder 打開）\n"
+        "下一步：\n"
+        "  1. 填寫 profile/applicant.yaml\n"
+        "  2. 把履歷 PDF 放進 profile/resumes/（檔名就是版本名稱，例如 cv.pdf）\n"
+        "  3. 在 profile/highlights.yaml 寫下經歷素材\n"
+        "  4. 在 profile/filters.yaml 選要找的方向（only_roles）\n"
+        "  5. job-radar install-app && job-radar install-schedule"
     )
+
+
+@app.command()
+def home(
+    open_: bool = typer.Option(False, "--open", help="用 Finder 打開"),
+    path_only: bool = typer.Option(
+        False, "--path", help='只印出路徑，例如 cd "$(job-radar home --path)"'
+    ),
+) -> None:
+    """顯示你的資料夾（profile/、data/、.env）與共用預設的位置。"""
+    cfg = load_config()
+    if path_only:
+        print(cfg.home)
+        return
+    console.print(f"你的資料夾：{cfg.home}")
+    console.print(f"共用預設（唯讀，更新時會被取代）：{cfg.defaults_dir}")
+    if open_:
+        subprocess.run(["open", str(cfg.home)], check=False)
+
+
+@app.command()
+def migrate(
+    old: Annotated[
+        Path | None,
+        typer.Argument(help="舊版的專案資料夾（git clone 的那個）；預設是目前所在的資料夾"),
+    ] = None,
+) -> None:
+    """把舊版放在專案資料夾裡的 profile/、data/、.env 搬到你的資料夾，並重設 Dock App 與排程。"""
+    from job_radar.desktop import MoveError, move_home, scheduled_time
+
+    old = (old or legacy_home() or Path.cwd()).resolve()
+    new = Path(os.environ.get("JOB_RADAR_HOME") or APP_SUPPORT).expanduser().resolve()
+    if old == new:
+        console.print(f"資料已經在 {new}。")
+        return
+    try:
+        moved = move_home(old, new)
+    except MoveError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from None
+    console.print(f"已把 {'、'.join(moved)} 從 {old} 搬到 {new}")
+    os.environ["JOB_RADAR_HOME"] = str(new)  # the reinstalls below point at the new folder
+    if (Path.home() / "Applications" / "Job Radar.app").exists():
+        install_app(dock=False)
+    slot = scheduled_time(Path.home() / "Library" / "LaunchAgents")
+    if slot:
+        install_schedule(time_of_day=f"{slot[0]:02d}:{slot[1]:02d}", remove=False)
 
 
 @apply_app.command("add")
@@ -239,7 +313,7 @@ def fetch(
         False, "--if-stale", help="最近一次排程時間（例如今天 08:30）之後已經抓過就略過"
     ),
 ) -> None:
-    """抓取公司清單（config/ 與 profile/ 的 companies.yaml）每家公司的職缺（ATS 公開 API）。"""
+    """抓取公司清單（共用的與 profile/ 的 companies.yaml）每家公司的職缺與職缺網站。"""
     from job_radar.radar.service import RadarService
 
     radar = RadarService(load_config())
@@ -260,7 +334,7 @@ def fetch(
 
 @app.command("check-companies")
 def check_companies() -> None:
-    """逐一驗證公司清單（config/ 與 profile/ 的 companies.yaml）的公司代號。"""
+    """逐一驗證公司清單（共用的與 profile/ 的 companies.yaml）的公司代號。"""
     import httpx
 
     from job_radar.apply.intake import USER_AGENT
@@ -317,12 +391,10 @@ def install_schedule(
         console.print("已取消每日抓取。" if remove_schedule(agents) else "本來就沒有設定。")
         return
     hour, minute = (int(x or 0) for x in time_of_day.partition(":")[::2])
-    uv = shutil.which("uv")
-    if uv is None:
-        console.print("[red]找不到 uv，請先安裝 uv[/red]")
-        raise typer.Exit(1)
-    plist = install(load_config().root, Path(uv).resolve(), hour, minute, agents)
-    console.print(f"每天 {hour:02d}:{minute:02d} 抓取職缺（{plist}），紀錄在 data/logs/fetch.log")
+    home_dir = load_config().home
+    plist = install(home_dir, job_radar_command(), hour, minute, agents)
+    log_file = home_dir / "data" / "logs" / "fetch.log"
+    console.print(f"每天 {hour:02d}:{minute:02d} 抓取職缺（{plist}），紀錄在 {log_file}")
 
 
 @app.command()

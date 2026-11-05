@@ -8,6 +8,9 @@
   in the background and exits.
 - `install_schedule` registers a LaunchAgent that runs `job-radar fetch` every day; launchd
   runs a missed run when the Mac wakes up.
+- Both run the installed `job-radar` command (the uv tool, or a checkout's .venv) with the
+  home folder spelled out, so neither depends on a working directory or on uv.
+- `move_home` moves profile/, data/ and .env out of an old clone into the home folder.
 """
 
 from __future__ import annotations
@@ -87,22 +90,22 @@ def remove_session(data_dir: Path, token: str) -> None:
 # --- Dock app -------------------------------------------------------------------
 
 
-def launcher_script(root: Path, uv: Path) -> str:
-    log_file = root / "data" / "logs" / "ui.log"
+def launcher_script(home: Path, command: Path) -> str:
+    log_file = home / "data" / "logs" / "ui.log"
     return (
         "#!/bin/zsh\n"
         "# Job Radar 啟動器：在背景啟動申請助手；已在執行時把視窗叫回前面。\n"
-        f"ROOT={shlex.quote(str(root))}\n"
-        f"UV={shlex.quote(str(uv))}\n"
+        f"export JOB_RADAR_HOME={shlex.quote(str(home))}\n"
+        f"JR={shlex.quote(str(command))}\n"
         f"LOG={shlex.quote(str(log_file))}\n"
         'mkdir -p "${LOG:h}"\n'
-        'cd "$ROOT" || exit 1\n'
-        'nohup "$UV" run job-radar ui >> "$LOG" 2>&1 &\n'
+        'cd "$JOB_RADAR_HOME" || exit 1\n'
+        'nohup "$JR" ui >> "$LOG" 2>&1 &\n'
         "disown\n"
     )
 
 
-def install_app(root: Path, uv: Path, applications: Path) -> Path:
+def install_app(home: Path, command: Path, applications: Path) -> Path:
     """Create (or replace) `<applications>/Job Radar.app`."""
     app = applications / f"{APP_NAME}.app"
     if app.exists():
@@ -126,7 +129,7 @@ def install_app(root: Path, uv: Path, applications: Path) -> Path:
     with (app / "Contents" / "Info.plist").open("wb") as fh:
         plistlib.dump(info, fh)
     script = macos / LAUNCHER
-    script.write_text(launcher_script(root, uv), encoding="utf-8")
+    script.write_text(launcher_script(home, command), encoding="utf-8")
     script.chmod(0o755)
     return app
 
@@ -187,12 +190,13 @@ def add_to_dock(app: Path) -> bool:
 # --- daily fetch ----------------------------------------------------------------
 
 
-def fetch_agent_plist(root: Path, uv: Path, hour: int, minute: int) -> dict:
-    log_file = str(root / "data" / "logs" / "fetch.log")
+def fetch_agent_plist(home: Path, command: Path, hour: int, minute: int) -> dict:
+    log_file = str(home / "data" / "logs" / "fetch.log")
     return {
         "Label": FETCH_AGENT,
-        "ProgramArguments": [str(uv), "run", "job-radar", "fetch", "--if-stale"],
-        "WorkingDirectory": str(root),
+        "ProgramArguments": [str(command), "fetch", "--if-stale"],
+        "EnvironmentVariables": {"JOB_RADAR_HOME": str(home)},
+        "WorkingDirectory": str(home),
         "StartCalendarInterval": {"Hour": hour, "Minute": minute},
         # launchd skips a run missed while the Mac was off; logging in makes it up.
         "RunAtLoad": True,
@@ -201,15 +205,15 @@ def fetch_agent_plist(root: Path, uv: Path, hour: int, minute: int) -> dict:
     }
 
 
-def install_schedule(root: Path, uv: Path, hour: int, minute: int, agents_dir: Path) -> Path:
+def install_schedule(home: Path, command: Path, hour: int, minute: int, agents_dir: Path) -> Path:
     """Write the LaunchAgent and (re)load it with launchctl."""
-    (root / "data" / "logs").mkdir(parents=True, exist_ok=True)
+    (home / "data" / "logs").mkdir(parents=True, exist_ok=True)
     agents_dir.mkdir(parents=True, exist_ok=True)
     plist = agents_dir / f"{FETCH_AGENT}.plist"
     domain = f"gui/{os.getuid()}"
     subprocess.run(["launchctl", "bootout", domain, str(plist)], capture_output=True)
     with plist.open("wb") as fh:
-        plistlib.dump(fetch_agent_plist(root, uv, hour, minute), fh)
+        plistlib.dump(fetch_agent_plist(home, command, hour, minute), fh)
     subprocess.run(["launchctl", "bootstrap", domain, str(plist)], check=True, capture_output=True)
     return plist
 
@@ -230,4 +234,45 @@ def remove_schedule(agents_dir: Path) -> bool:
         return False
     subprocess.run(["launchctl", "bootout", f"gui/{os.getuid()}", str(plist)], capture_output=True)
     plist.unlink()
+    return True
+
+
+# --- moving an old clone's files into the home folder ------------------------------
+
+HOME_ITEMS = ("profile", "data", ".env")
+
+
+class MoveError(RuntimeError):
+    """The files cannot be moved safely; nothing was moved."""
+
+
+def move_home(old: Path, new: Path) -> list[str]:
+    """Move profile/, data/ and .env from `old` (a clone, the home folder before 2026-11-04)
+    into `new`; the names moved. Refuses while the assistant runs from `old` (its Chrome holds
+    data/browser-profile open) or when `new` already has any of them."""
+    present = [name for name in HOME_ITEMS if (old / name).exists()]
+    if not present:
+        raise MoveError(f"{old} 裡沒有 profile/、data/ 或 .env")
+    session = read_session(old / "data")
+    if session and _alive(session.pid):
+        raise MoveError("申請助手還開著：先關掉 Job Radar 的 Chrome 視窗再搬")
+    clashes = [name for name in present if (new / name).exists()]
+    if clashes:
+        raise MoveError(
+            f"{new} 已經有 {'、'.join(clashes)}，為了不覆蓋，沒有搬任何東西。"
+            "如果那是剛用 init-profile 建立、還沒填的範本，先刪掉再搬一次"
+        )
+    new.mkdir(parents=True, exist_ok=True)
+    for name in present:
+        shutil.move(old / name, new / name)
+    return present
+
+
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
     return True

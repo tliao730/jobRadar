@@ -406,7 +406,7 @@ function renderRadar() {
 
   const parts = [head];
   if (r && !r.total) {
-    parts.push(h('div', { class: 'banner info', text: '按「重新抓取」從公司清單（config/ 與 profile/ 的 companies.yaml）與 Simplify、LinkedIn、Jobright 抓職缺（約 2–4 分鐘）。' }));
+    parts.push(h('div', { class: 'banner info', text: '按「重新抓取」從公司清單（共用的與你 profile/ 的 companies.yaml）與 Simplify、LinkedIn、Jobright 抓職缺（約 2–4 分鐘）。' }));
   }
   if (r && r.total) parts.push(radarFilters([...items, ...manual]));
   if (r && r.found_companies.length) parts.push(foundCompanies(r.found_companies));

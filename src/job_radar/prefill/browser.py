@@ -68,7 +68,7 @@ class BrowserManager:
             )
         except PlaywrightError as exc:
             hint = (
-                "請確認已安裝 Google Chrome，或在 config/settings.yaml 把 browser.channel "
+                "請確認已安裝 Google Chrome，或在 profile/settings.yaml 把 browser.channel "
                 "設為 null 並執行 `uv run playwright install chromium`"
                 if self._channel
                 else "請執行 `uv run playwright install chromium`"

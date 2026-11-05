@@ -99,7 +99,7 @@ class AnthropicLLM:
             category = response.stop_details.category if response.stop_details else None
             raise LLMError(f"模型拒絕產生這份草稿（類別：{category or '未分類'}）")
         if response.stop_reason == "max_tokens":
-            raise LLMError("草稿太長被截斷：請提高 config/settings.yaml 的 llm.max_tokens")
+            raise LLMError("草稿太長被截斷：請在 profile/settings.yaml 提高 llm.max_tokens")
         parsed = response.parsed_output
         if parsed is None:
             raise LLMError("模型沒有回傳可用的結果，請再試一次")
@@ -115,7 +115,7 @@ class AnthropicLLM:
         if price:
             cost = (usage.input_tokens * price.input + usage.output_tokens * price.output) / 1e6
         else:
-            log.warning("config/settings.yaml 沒有 %s 的價格，成本記為 0", served_by)
+            log.warning("settings.yaml 沒有 %s 的價格，成本記為 0", served_by)
         log.info(
             "LLM 用量：輸入 %d tokens、輸出 %d tokens，約 $%.4f",
             usage.input_tokens,

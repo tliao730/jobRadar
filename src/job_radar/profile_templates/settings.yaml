@@ -1,0 +1,14 @@
+# 申請助手的個人設定：只寫跟共用設定（程式內建的 defaults/settings.yaml）不一樣的部分。
+# 例如（把 # 拿掉再改）：
+#
+# ui:
+#   port: 8766                # 8765 被別的程式佔用時
+#
+# apply:
+#   default_resume: cv        # profile/resumes/ 底下的檔名（不含 .pdf），沒有規則符合時用它
+#   resume_rules:             # 依職稱建議履歷版本，由上而下第一個符合的為準（整個取代共用的規則）
+#     - {variant: hw, title_pattern: "asic|fpga|hardware|electrical|embedded"}
+#     - {variant: cv, title_pattern: "."}
+#
+# llm:
+#   effort: low               # 草稿的思考程度：low / medium / high

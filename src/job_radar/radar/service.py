@@ -50,7 +50,7 @@ class RadarService:
         self._cache: tuple[tuple, list[Match]] | None = None
 
     def radar_config(self) -> RadarConfig:
-        return load_radar_config(self.cfg.root / "config", self.cfg.profile_dir)
+        return load_radar_config(self.cfg.defaults_dir, self.cfg.profile_dir)
 
     @property
     def fetching(self) -> bool:
@@ -148,7 +148,7 @@ class RadarService:
 
     def add_company(self, name: str, platform: str, token: str) -> None:
         """Append a company to my own list, profile/companies.yaml (comments and order are
-        kept); config/companies.yaml is the shared list in git."""
+        kept); defaults/companies.yaml is the shared list in git."""
         path = self.cfg.profile_dir / "companies.yaml"
         Company(name=name, platform=platform, token=token)  # validate
         if (platform, token) in {
@@ -189,7 +189,7 @@ class RadarService:
 
     def matches(self, skip_ids: set[str] = frozenset()) -> list[Match]:
         """Active postings, evaluated and sorted best first (excluded ones last), minus those
-        dismissed or in `skip_ids`. Evaluation is cached until a fetch or a config/profile edit."""
+        dismissed or in `skip_ids`. Evaluation is cached until a fetch or a settings edit."""
         with self._evaluating:
             key = self._cache_key()
             if self._cache is None or self._cache[0] != key:
@@ -202,7 +202,7 @@ class RadarService:
         # Only what my_skills reads: remembering an answer (answers_learned.yaml) or editing
         # applicant.yaml must not cost a ~4 s re-evaluation of every job.
         profile = self.cfg.profile_dir
-        watched = [self.cfg.root / "config" / n for n in ("filters.yaml", "skills.yaml")]
+        watched = [self.cfg.defaults_dir / n for n in ("filters.yaml", "skills.yaml")]
         watched += [profile / n for n in ("filters.yaml", "highlights.yaml", "skills.yaml")]
         if (profile / "resumes").is_dir():
             watched += sorted((profile / "resumes").glob("*.pdf"))

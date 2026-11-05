@@ -246,7 +246,9 @@ def test_fetch_links_site_postings_and_lists_the_rest_as_manual(
     )
     respx.get(url__regex=r".*").mock(return_value=httpx.Response(404))  # no board found
     cfg = AppConfig(
-        root=tmp_path, paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d"))
+        home=tmp_path,
+        defaults_dir=tmp_path / "config",
+        paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d")),
     )
     service = RadarService(cfg)
     with httpx.Client() as client:
@@ -270,7 +272,9 @@ def test_found_companies_can_be_added_to_the_list(tmp_path, profile_dir):
     shared = "companies:\n  - {name: A, platform: lever, token: a}\n"
     (tmp_path / "config" / "companies.yaml").write_text(shared)
     cfg = AppConfig(
-        root=tmp_path, paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d"))
+        home=tmp_path,
+        defaults_dir=tmp_path / "config",
+        paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d")),
     )
     service = RadarService(cfg)
     service.store.save_board("red ventures", "Red Ventures", "greenhouse", "redventures")
@@ -411,7 +415,9 @@ def test_simplify_links_are_matched_by_url_and_never_guessed(
     lists = respx.get(NEW_GRAD).mock(return_value=httpx.Response(200, json=listings()))
     guessed = respx.get(url__regex=r".*").mock(return_value=httpx.Response(404))
     cfg = AppConfig(
-        root=tmp_path, paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d"))
+        home=tmp_path,
+        defaults_dir=tmp_path / "config",
+        paths=PathsConfig(profile_dir=str(profile_dir), data_dir=str(tmp_path / "d")),
     )
     service = RadarService(cfg)
     with httpx.Client() as client:
